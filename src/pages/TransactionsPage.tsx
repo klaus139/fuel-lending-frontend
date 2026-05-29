@@ -65,7 +65,7 @@ export function TransactionsPage() {
       {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
       },
     ],
     [],
@@ -83,7 +83,7 @@ export function TransactionsPage() {
         String(r.fuelLitres),
         String(r.pricePerLitre),
         String(r.amount),
-        r.status,
+        r.status ?? 'unknown',
       ]),
     )
   }

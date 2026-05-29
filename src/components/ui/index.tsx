@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { cn } from '../../lib/utils'
 
-export function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status }: { status?: string | null }) {
+  const label = (status ?? 'unknown').replace(/_/g, ' ')
+
   return (
     <span
       className={cn(
@@ -15,7 +17,7 @@ export function StatusBadge({ status }: { status: string }) {
               : 'bg-zinc-500/15 text-zinc-400',
       )}
     >
-      {status.replace(/_/g, ' ')}
+      {label}
     </span>
   )
 }

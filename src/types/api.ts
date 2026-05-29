@@ -134,8 +134,7 @@ export type AdminUserSummary = {
 }
 
 export type AdminSaleRow = {
-  _id: string
-  id?: string
+  id: string
   fuelLitres: number
   pricePerLitre: number
   amount: number
