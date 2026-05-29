@@ -110,6 +110,15 @@ export function normalizeQrDisbursement(data: Record<string, unknown>): QrDisbur
   }
 }
 
+export type MerchantTransactionView = {
+  _id?: string
+  id?: string
+  status: string
+  amount: number
+  fuelLitres: number
+  completedAt?: string
+}
+
 export const qrDemoApi = {
   login: async (email: string, password: string) => {
     try {
@@ -147,4 +156,7 @@ export const qrDemoApi = {
 
   confirmQrPayment: (token: string, qrPayload: string) =>
     authPost<QrConfirmResult>('/transactions/qr/confirm', { qrPayload }, token),
+
+  getMerchantTransaction: (token: string, transactionId: string) =>
+    authGet<MerchantTransactionView>(`/merchant/transactions/${transactionId}`, token),
 }
