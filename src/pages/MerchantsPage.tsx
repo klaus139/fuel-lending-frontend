@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/static-components */
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -20,7 +19,6 @@ const emptyCreateForm: AdminCreateMerchantInput = {
   merchantName: '',
   email: '',
   phone: '',
-  password: '',
   address: '',
   city: '',
   stationBranch: '',
@@ -30,6 +28,60 @@ const emptyCreateForm: AdminCreateMerchantInput = {
   businessLocation: '',
   landmark: '',
   nin: '',
+}
+
+function MerchantFormFields({
+  form,
+  setForm,
+  showNin,
+}: {
+  form: Partial<AdminCreateMerchantInput>
+  setForm: (patch: Partial<AdminCreateMerchantInput>) => void
+  /** NIN is required when creating a merchant (not on edit). */
+  showNin?: boolean
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
+      <FormField label="Merchant name">
+        <Input value={form.merchantName ?? ''} onChange={(e) => setForm({ merchantName: e.target.value })} />
+      </FormField>
+      <FormField label="Business name">
+        <Input value={form.businessName ?? ''} onChange={(e) => setForm({ businessName: e.target.value })} />
+      </FormField>
+      <FormField label="Email">
+        <Input type="email" value={form.email ?? ''} onChange={(e) => setForm({ email: e.target.value })} />
+      </FormField>
+      <FormField label="Phone">
+        <Input value={form.phone ?? ''} onChange={(e) => setForm({ phone: e.target.value })} />
+      </FormField>
+      <FormField label="City">
+        <Input value={form.city ?? ''} onChange={(e) => setForm({ city: e.target.value })} />
+      </FormField>
+      <FormField label="Station branch">
+        <Input value={form.stationBranch ?? ''} onChange={(e) => setForm({ stationBranch: e.target.value })} />
+      </FormField>
+      <FormField label="Address">
+        <Input value={form.address ?? ''} onChange={(e) => setForm({ address: e.target.value })} />
+      </FormField>
+      <FormField label="LGA">
+        <Input value={form.lga ?? ''} onChange={(e) => setForm({ lga: e.target.value })} />
+      </FormField>
+      <FormField label="State">
+        <Input value={form.state ?? ''} onChange={(e) => setForm({ state: e.target.value })} />
+      </FormField>
+      <FormField label="Business location">
+        <Input value={form.businessLocation ?? ''} onChange={(e) => setForm({ businessLocation: e.target.value })} />
+      </FormField>
+      <FormField label="Landmark">
+        <Input value={form.landmark ?? ''} onChange={(e) => setForm({ landmark: e.target.value })} />
+      </FormField>
+      {showNin && (
+        <FormField label="NIN">
+          <Input value={form.nin ?? ''} onChange={(e) => setForm({ nin: e.target.value })} placeholder="11 digits" />
+        </FormField>
+      )}
+    </div>
+  )
 }
 
 export function MerchantsPage() {
@@ -171,62 +223,6 @@ export function MerchantsPage() {
     )
   }
 
-  const MerchantFormFields = ({
-    form,
-    setForm,
-    includePassword,
-  }: {
-    form: Partial<AdminCreateMerchantInput>
-    setForm: (f: Partial<AdminCreateMerchantInput>) => void
-    includePassword?: boolean
-  }) => (
-    <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
-      <FormField label="Merchant name">
-        <Input value={form.merchantName ?? ''} onChange={(e) => setForm({ ...form, merchantName: e.target.value })} />
-      </FormField>
-      <FormField label="Business name">
-        <Input value={form.businessName ?? ''} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
-      </FormField>
-      <FormField label="Email">
-        <Input type="email" value={form.email ?? ''} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-      </FormField>
-      <FormField label="Phone">
-        <Input value={form.phone ?? ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-      </FormField>
-      {includePassword && (
-        <FormField label="Password">
-          <Input type="password" value={form.password ?? ''} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-        </FormField>
-      )}
-      <FormField label="City">
-        <Input value={form.city ?? ''} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-      </FormField>
-      <FormField label="Station branch">
-        <Input value={form.stationBranch ?? ''} onChange={(e) => setForm({ ...form, stationBranch: e.target.value })} />
-      </FormField>
-      <FormField label="Address">
-        <Input value={form.address ?? ''} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-      </FormField>
-      <FormField label="LGA">
-        <Input value={form.lga ?? ''} onChange={(e) => setForm({ ...form, lga: e.target.value })} />
-      </FormField>
-      <FormField label="State">
-        <Input value={form.state ?? ''} onChange={(e) => setForm({ ...form, state: e.target.value })} />
-      </FormField>
-      <FormField label="Business location">
-        <Input value={form.businessLocation ?? ''} onChange={(e) => setForm({ ...form, businessLocation: e.target.value })} />
-      </FormField>
-      <FormField label="Landmark">
-        <Input value={form.landmark ?? ''} onChange={(e) => setForm({ ...form, landmark: e.target.value })} />
-      </FormField>
-      {includePassword && (
-        <FormField label="NIN">
-          <Input value={form.nin ?? ''} onChange={(e) => setForm({ ...form, nin: e.target.value })} />
-        </FormField>
-      )}
-    </div>
-  )
-
   return (
     <div>
       <PageHeader
@@ -264,7 +260,10 @@ export function MerchantsPage() {
       />
 
       <Modal open={!!editMerchant} onClose={() => setEditMerchant(null)} title="Edit Merchant" wide>
-        <MerchantFormFields form={editForm} setForm={setEditForm} />
+        <MerchantFormFields
+          form={editForm}
+          setForm={(patch) => setEditForm((prev) => ({ ...prev, ...patch }))}
+        />
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setEditMerchant(null)}>Cancel</Button>
           <Button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending}>
@@ -274,7 +273,14 @@ export function MerchantsPage() {
       </Modal>
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create Merchant" wide>
-        <MerchantFormFields form={createForm} setForm={(f) => setCreateForm({ ...createForm, ...f })} includePassword />
+        <p className="mb-4 text-sm text-(--text-muted)">
+          A temporary login password will be generated and emailed to the merchant.
+        </p>
+        <MerchantFormFields
+          form={createForm}
+          setForm={(patch) => setCreateForm((prev) => ({ ...prev, ...patch }))}
+          showNin
+        />
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
           <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>

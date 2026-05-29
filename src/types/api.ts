@@ -226,7 +226,6 @@ export type AdminCreateMerchantInput = {
   merchantName: string
   email: string
   phone: string
-  password: string
   address: string
   city: string
   stationBranch: string

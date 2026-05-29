@@ -11,6 +11,7 @@ import { UsersPage } from './pages/UsersPage'
 import { MerchantsPage } from './pages/MerchantsPage'
 import { LoansPage } from './pages/LoansPage'
 import { SettlementsPage } from './pages/SettlementsPage'
+import { TestQrCodePage } from './pages/TestQrCodePage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +32,7 @@ export default function App() {
               <Route element={<GuestRoute />}>
                 <Route path="/login" element={<LoginPage />} />
               </Route>
+              <Route path="/demo/qr" element={<TestQrCodePage />} />
               <Route element={<ProtectedRoute />}>
                 <Route element={<AdminLayout />}>
                   <Route index element={<DashboardPage />} />
