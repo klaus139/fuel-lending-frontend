@@ -11,6 +11,7 @@ const navItems = [
   { to: '/merchants', label: 'Merchants', icon: '🏪' },
   { to: '/loans', label: 'Loans', icon: '💳' },
   { to: '/settlements', label: 'Settlements', icon: '💰' },
+  { to: '/support', label: 'Support', icon: '🎫' },
   { to: '/demo/qr', label: 'QR Demo', icon: '📷' },
 ]
 

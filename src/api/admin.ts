@@ -22,6 +22,10 @@ import type {
   SettlementsQuery,
   LoanSummary,
   AdminMerchantSummary as MerchantDetail,
+  SupportTicketsQuery,
+  SupportTicketSummary,
+  SupportTicketDetail,
+  SupportTicketStatus,
 } from '../types/api'
 
 export const authApi = {
@@ -116,4 +120,16 @@ export const adminApi = {
 
   markSettlementPaid: (settlementId: string, paymentReference?: string) =>
     apiPost<Settlement>(`/admin/settlements/${settlementId}/mark-paid`, paymentReference ? { paymentReference } : {}),
+
+  supportTickets: (query: SupportTicketsQuery) =>
+    apiGet<PaginatedResult<SupportTicketSummary>>('/admin/support/tickets', query as Record<string, unknown>),
+
+  getSupportTicket: (ticketId: string) =>
+    apiGet<SupportTicketDetail>(`/admin/support/tickets/${ticketId}`),
+
+  updateSupportTicketStatus: (ticketId: string, status: SupportTicketStatus) =>
+    apiPatch<SupportTicketDetail>(`/admin/support/tickets/${ticketId}/status`, { status }),
+
+  replySupportTicket: (ticketId: string, message: string) =>
+    apiPost<SupportTicketDetail>(`/admin/support/tickets/${ticketId}/replies`, { message }),
 }

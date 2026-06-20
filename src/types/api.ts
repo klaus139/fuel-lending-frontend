@@ -275,3 +275,44 @@ export type SettlementsQuery = {
   merchantUserId?: string
   settlementDate?: string
 }
+
+export type SupportTicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
+
+export type SupportTopic =
+  | 'credit_issue'
+  | 'loan_issue'
+  | 'fuel_disbursement'
+  | 'repayment'
+  | 'other'
+
+export type SupportMessage = {
+  id: string
+  senderRole: 'customer' | 'admin'
+  message: string
+  createdAt: string
+}
+
+export type SupportTicketSummary = {
+  id: string
+  topic: SupportTopic
+  topicLabel: string
+  subject: string
+  status: SupportTicketStatus
+  lastMessage: string
+  lastMessageAt: string
+  createdAt: string
+  updatedAt: string
+  messageCount: number
+  hasAdminReply: boolean
+}
+
+export type SupportTicketDetail = SupportTicketSummary & {
+  messages: SupportMessage[]
+}
+
+export type SupportTicketsQuery = {
+  page?: number
+  limit?: number
+  status?: SupportTicketStatus
+  userId?: string
+}

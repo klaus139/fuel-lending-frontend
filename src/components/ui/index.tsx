@@ -8,11 +8,13 @@ export function StatusBadge({ status }: { status?: string | null }) {
     <span
       className={cn(
         'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize',
-        status === 'active' || status === 'approved' || status === 'completed' || status === 'paid'
+        status === 'active' || status === 'approved' || status === 'completed' || status === 'paid' || status === 'resolved'
           ? 'bg-emerald-500/15 text-emerald-500'
-          : status === 'pending' || status === 'partially_repaid' || status === 'awaiting_confirmation'
+          : status === 'pending' || status === 'partially_repaid' || status === 'awaiting_confirmation' || status === 'open'
             ? 'bg-amber-500/15 text-amber-500'
-            : status === 'rejected' || status === 'declined' || status === 'defaulted' || status === 'blocked' || status === 'suspended'
+            : status === 'in_progress'
+              ? 'bg-blue-500/15 text-blue-500'
+              : status === 'rejected' || status === 'declined' || status === 'defaulted' || status === 'blocked' || status === 'suspended' || status === 'closed'
               ? 'bg-red-500/15 text-red-500'
               : 'bg-zinc-500/15 text-zinc-400',
       )}
