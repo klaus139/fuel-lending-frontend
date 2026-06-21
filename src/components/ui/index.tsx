@@ -135,6 +135,21 @@ export function Input({
   )
 }
 
+export function Textarea({
+  className,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={cn(
+        'w-full rounded-lg border border-(--border) bg-(--bg-secondary) px-3 py-2 text-sm text-(--text-primary) placeholder:text-(--text-muted) focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
 export function Select({
   className,
   children,

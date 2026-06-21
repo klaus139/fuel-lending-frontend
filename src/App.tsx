@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { TransactionsPage } from './pages/TransactionsPage'
 import { UsersPage } from './pages/UsersPage'
+import { UserDetailPage } from './pages/UserDetailPage'
 import { MerchantsPage } from './pages/MerchantsPage'
 import { LoansPage } from './pages/LoansPage'
 import { SettlementsPage } from './pages/SettlementsPage'
@@ -43,6 +44,7 @@ export default function App() {
                   <Route index element={<DashboardPage />} />
                   <Route path="transactions" element={<TransactionsPage />} />
                   <Route path="users" element={<UsersPage />} />
+                  <Route path="users/:userId" element={<UserDetailPage />} />
                   <Route path="merchants" element={<MerchantsPage />} />
                   <Route path="loans" element={<LoansPage />} />
                   <Route path="settlements" element={<SettlementsPage />} />

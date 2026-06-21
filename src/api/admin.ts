@@ -8,6 +8,10 @@ import type {
   RepaymentRateReport,
   TransactionVolumeReport,
   AdminUserSummary,
+  AdminUserOverview,
+  AdminRepaymentRow,
+  AdminUserTransaction,
+  SupportTopic,
   AdminSaleRow,
   AdminLoanListItem,
   AdminOverdueLoanItem,
@@ -66,6 +70,25 @@ export const adminApi = {
     apiGet<PaginatedResult<AdminUserSummary>>('/admin/users', query as Record<string, unknown>),
 
   getUser: (userId: string) => apiGet<AdminUserSummary>(`/admin/users/${userId}`),
+
+  getUserOverview: (userId: string) => apiGet<AdminUserOverview>(`/admin/users/${userId}/overview`),
+
+  getUserLoans: (userId: string, page = 1, limit = 10) =>
+    apiGet<PaginatedResult<LoanSummary>>(`/admin/users/${userId}/loans`, { page, limit }),
+
+  getUserTransactions: (userId: string, page = 1, limit = 10) =>
+    apiGet<PaginatedResult<AdminUserTransaction>>(`/admin/users/${userId}/transactions`, {
+      page,
+      limit,
+    }),
+
+  sendUserMessage: (
+    userId: string,
+    body: { message: string; topic?: SupportTopic; subject?: string },
+  ) => apiPost<SupportTicketDetail>(`/admin/users/${userId}/messages`, body),
+
+  repayments: (query: { page?: number; limit?: number; userId?: string; loanId?: string }) =>
+    apiGet<PaginatedResult<AdminRepaymentRow>>('/admin/repayments', query as Record<string, unknown>),
 
   updateUser: (userId: string, body: { firstName?: string; lastName?: string; email?: string; phone?: string }) =>
     apiPatch<AdminUserSummary>(`/admin/users/${userId}`, body),

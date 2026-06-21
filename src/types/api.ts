@@ -316,3 +316,141 @@ export type SupportTicketsQuery = {
   status?: SupportTicketStatus
   userId?: string
 }
+
+export type KycStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected'
+
+export type AdminUserKyc = {
+  status: KycStatus
+  kycId?: string
+  rejectReason?: string | null
+  submittedAt?: string
+  reviewedAt?: string | null
+  verification?: {
+    ninVerified: boolean
+    bvnVerified: boolean
+    ninFirstNameScore?: number
+    ninLastNameScore?: number
+    bvnFirstNameScore?: number
+    bvnLastNameScore?: number
+  }
+  photoUrl?: string
+  motorPhotoUrl?: string
+  motorType?: string
+  motorRegistrationNumber?: string
+  dateOfBirth?: string
+  address?: string
+  city?: string
+  state?: string
+  lga?: string
+}
+
+export type AdminUserCreditRating = {
+  decision: string
+  creditLimit: number
+  approvedPrincipal: number
+  evaluatedAt: string
+  checks: { code: string; passed: boolean; message: string }[]
+}
+
+export type AdminUserTierInfo = {
+  currentTier: {
+    id: string
+    code: string
+    name: string
+    creditLimit: number
+  }
+  creditLimit: number
+  hasPaymentCard: boolean
+}
+
+export type AdminWalletOverview = {
+  virtualAccount: {
+    accountNumber: string
+    bankName: string
+    accountName: string
+    reference: string
+    status: string
+    provider: string
+    createdAt: string
+  }
+  balance: number
+  currency: string
+  recentTransactions: {
+    id: string
+    type: string
+    amount: number
+    balanceAfter: number
+    description?: string
+    createdAt: string
+  }[]
+}
+
+export type AdminUserOutstanding =
+  | { hasActiveLoan: false }
+  | {
+      hasActiveLoan: true
+      loanId: string
+      principalAmount: number
+      interestAmount: number
+      totalAmountDue: number
+      amountRepaid: number
+      outstandingBalance: number
+      dueDate: string
+      status: LoanStatus
+    }
+
+export type AdminUserOverview = {
+  profile: AdminUserSummary
+  kyc: AdminUserKyc | null
+  tier: AdminUserTierInfo | null
+  fuelBalance: {
+    balance: number
+    currency: string
+    totalLitresPurchased: number
+  }
+  wallet: AdminWalletOverview | null
+  outstanding: AdminUserOutstanding
+  activeLoan: LoanSummary | null
+  nextPayment: {
+    amount: number
+    dueDate: string
+    loanId: string
+  } | null
+  creditRating: AdminUserCreditRating | null
+  stats: {
+    totalLoans: number
+    repaidLoans: number
+    completedFuelPurchases: number
+  }
+}
+
+export type AdminRepaymentRow = {
+  id: string
+  loanId: string
+  userId: string
+  amount: number
+  interestPortion: number
+  principalPortion: number
+  source: string
+  createdAt: string
+  customer: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  }
+}
+
+export type AdminUserTransaction = {
+  id: string
+  fuelLitres: number
+  pricePerLitre: number
+  amount: number
+  status: TransactionStatus
+  merchantSnapshot?: {
+    businessName?: string
+    stationCode?: string
+  }
+  completedAt?: string
+  createdAt: string
+}

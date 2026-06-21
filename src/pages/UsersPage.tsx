@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
 import { adminApi } from '../api/admin'
@@ -68,12 +69,15 @@ export function UsersPage() {
         header: 'Name',
         accessorFn: (r) => `${r.firstName} ${r.lastName}`,
         cell: ({ row }) => (
-          <div>
+          <Link
+            to={`/users/${row.original.id}`}
+            className="block hover:text-emerald-500"
+          >
             <p className="font-medium">
               {row.original.firstName} {row.original.lastName}
             </p>
             <p className="text-xs text-(--text-muted)">{row.original.email}</p>
-          </div>
+          </Link>
         ),
       },
       { accessorKey: 'phone', header: 'Phone' },
@@ -98,6 +102,12 @@ export function UsersPage() {
         header: 'Actions',
         cell: ({ row }) => (
           <div className="flex gap-1">
+            <Link
+              to={`/users/${row.original.id}`}
+              className="inline-flex items-center rounded-lg border border-(--border) bg-(--bg-hover) px-3 py-1.5 text-xs font-medium text-(--text-primary) hover:bg-(--border)"
+            >
+              View
+            </Link>
             <Button size="sm" variant="secondary" onClick={() => openEdit(row.original)}>
               Edit
             </Button>
