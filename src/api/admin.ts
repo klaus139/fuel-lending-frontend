@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost, setTokens, clearTokens } from './client'
+import { apiGet, apiPatch, apiPost, apiPut, setTokens, clearTokens } from './client'
 import type {
   AuthTokensResponse,
   AuthUser,
@@ -30,6 +30,10 @@ import type {
   SupportTicketSummary,
   SupportTicketDetail,
   SupportTicketStatus,
+  AdminLoanConfig,
+  ReconciliationMerchantRow,
+  ReconciliationSnapshotRow,
+  SnapshotTransactionsResult,
 } from '../types/api'
 
 export const authApi = {
@@ -155,4 +159,46 @@ export const adminApi = {
 
   replySupportTicket: (ticketId: string, message: string) =>
     apiPost<SupportTicketDetail>(`/admin/support/tickets/${ticketId}/replies`, { message }),
+
+  getLoanConfig: () => apiGet<AdminLoanConfig>('/admin/config/loan'),
+
+  setLoanConfig: (body: {
+    interestPerLitre?: number
+    overdueDailyInterestPercent?: number
+  }) => apiPut<AdminLoanConfig>('/admin/config/loan', body),
+
+  reconciliationMerchants: (page = 1, limit = 20) =>
+    apiGet<PaginatedResult<ReconciliationMerchantRow>>('/admin/reconciliation/merchants', {
+      page,
+      limit,
+    }),
+
+  merchantSnapshots: (
+    merchantProfileId: string,
+    page = 1,
+    limit = 20,
+    status?: ReconciliationSnapshotRow['status'],
+  ) =>
+    apiGet<PaginatedResult<ReconciliationSnapshotRow>>(
+      `/admin/reconciliation/merchants/${merchantProfileId}/snapshots`,
+      { page, limit, ...(status ? { status } : {}) },
+    ),
+
+  syncMerchantSnapshot: (merchantProfileId: string, salesDate: string) =>
+    apiPost<ReconciliationSnapshotRow>(
+      `/admin/reconciliation/merchants/${merchantProfileId}/snapshots/sync`,
+      { salesDate },
+    ),
+
+  snapshotTransactions: (merchantProfileId: string, salesDate: string, page = 1, limit = 20) =>
+    apiGet<SnapshotTransactionsResult>(
+      `/admin/reconciliation/merchants/${merchantProfileId}/snapshots/${salesDate}/transactions`,
+      { page, limit },
+    ),
+
+  reconcileSnapshot: (snapshotId: string) =>
+    apiPost<ReconciliationSnapshotRow>(`/admin/reconciliation/snapshots/${snapshotId}/reconcile`),
+
+  initiateSettlementFromSnapshot: (snapshotId: string) =>
+    apiPost<Settlement>(`/admin/reconciliation/snapshots/${snapshotId}/initiate-settlement`),
 }

@@ -59,7 +59,8 @@ export type TransactionStatus =
   | 'cancelled'
 
 export type MerchantStatus = 'pending' | 'approved' | 'rejected' | 'suspended'
-export type SettlementStatus = 'pending' | 'paid'
+export type SettlementStatus = 'pending' | 'paid' | 'confirmed'
+export type MerchantSalesSnapshotStatus = 'open' | 'reconciled' | 'settled'
 export type UserAccountStatus = 'active' | 'blocked'
 
 export type AdminDashboardData = {
@@ -133,8 +134,28 @@ export type AdminUserSummary = {
   createdAt: string
 }
 
+export type LoanBreakdown = {
+  creditLimit: number
+  amountDisbursed: number
+  amountSpent: number
+  amountUnspent: number
+  amountToPay: number
+  litresConsumed: number
+  interestAccrued: number
+  totalOwed: number
+}
+
+export type AdminTransactionBreakdown = {
+  litresConsumed: number
+  fuelCost: number
+  interestAdded: number
+  purchaseTotal: number
+}
+
 export type AdminSaleRow = {
   id: string
+  userId?: string
+  loanId?: string
   fuelLitres: number
   pricePerLitre: number
   amount: number
@@ -145,6 +166,14 @@ export type AdminSaleRow = {
   settlementId?: string
   completedAt?: string
   createdAt: string
+  customerSnapshot?: {
+    firstName: string
+    lastName: string
+    email: string
+    phone: string
+  }
+  transactionBreakdown: AdminTransactionBreakdown
+  loanBreakdown?: LoanBreakdown
 }
 
 export type LoanSummary = {
@@ -167,6 +196,7 @@ export type LoanSummary = {
 }
 
 export type AdminLoanListItem = LoanSummary & {
+  breakdown: LoanBreakdown
   customer: {
     id: string
     firstName: string
@@ -207,13 +237,45 @@ export type Settlement = {
   merchantCode: string
   settlementDate: string
   grossAmount: number
+  totalLitres?: number
   transactionCount: number
   status: SettlementStatus
   source: 'auto' | 'manual'
   note?: string
   paidAt?: string
   paymentReference?: string
+  confirmedAt?: string
   createdAt: string
+}
+
+export type ReconciliationMerchantRow = {
+  merchantProfileId: string
+  merchantUserId: string
+  merchantCode: string
+  businessName: string
+  merchantName: string
+  openSnapshotCount: number
+  reconciledSnapshotCount: number
+  latestSalesDate?: string
+}
+
+export type ReconciliationSnapshotRow = {
+  id: string
+  merchantUserId: string
+  merchantCode: string
+  salesDate: string
+  totalAmount: number
+  totalLitres: number
+  transactionCount: number
+  status: MerchantSalesSnapshotStatus
+  reconciledAt?: string
+  settlementId?: string
+}
+
+export type SnapshotTransactionsResult = {
+  snapshot: ReconciliationSnapshotRow
+  items: AdminSaleRow[]
+  pagination: PaginationMeta
 }
 
 export type AdminFinanceSettlementRow = Settlement & {
@@ -234,6 +296,15 @@ export type AdminCreateMerchantInput = {
   businessLocation: string
   landmark: string
   nin: string
+}
+
+export type AdminLoanConfig = {
+  interestPerLitre: number
+  overdueDailyInterestPercent: number
+  sources: {
+    interestPerLitre: 'database' | 'env'
+    overdueDailyInterestPercent: 'database' | 'env'
+  }
 }
 
 export type SalesQuery = {

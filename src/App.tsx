@@ -11,8 +11,10 @@ import { UsersPage } from './pages/UsersPage'
 import { UserDetailPage } from './pages/UserDetailPage'
 import { MerchantsPage } from './pages/MerchantsPage'
 import { LoansPage } from './pages/LoansPage'
+import { ReconciliationPage } from './pages/ReconciliationPage'
 import { SettlementsPage } from './pages/SettlementsPage'
 import { SupportTicketsPage } from './pages/SupportTicketsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { TestQrCodePage } from './pages/TestQrCodePage'
 import { TestQrCustomerPage } from './pages/TestQrCustomerPage'
 import { TestQrMerchantPage } from './pages/TestQrMerchantPage'
@@ -48,7 +50,9 @@ export default function App() {
                   <Route path="merchants" element={<MerchantsPage />} />
                   <Route path="loans" element={<LoansPage />} />
                   <Route path="settlements" element={<SettlementsPage />} />
+                  <Route path="reconciliation" element={<ReconciliationPage />} />
                   <Route path="support" element={<SupportTicketsPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
                 </Route>
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />

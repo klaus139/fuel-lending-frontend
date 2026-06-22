@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
 import { adminApi } from '../api/admin'
+import { LoanBreakdownCell } from '../components/LoanBreakdownCell'
 import { DataTable } from '../components/data-table/DataTable'
 import { Button, Input, PageHeader, Select, StatusBadge } from '../components/ui'
 import { downloadCsv, formatCurrency, formatDateTime, formatNumber } from '../lib/utils'
@@ -38,6 +39,22 @@ export function TransactionsPage() {
         cell: ({ row }) => formatDateTime(row.original.completedAt ?? row.original.createdAt),
       },
       {
+        id: 'customer',
+        header: 'Customer',
+        cell: ({ row }) => {
+          const customer = row.original.customerSnapshot
+          if (!customer) return <span className="text-(--text-muted)">—</span>
+          return (
+            <div>
+              <p className="font-medium">
+                {customer.firstName} {customer.lastName}
+              </p>
+              <p className="text-xs text-(--text-muted)">{customer.email}</p>
+            </div>
+          )
+        },
+      },
+      {
         accessorKey: 'merchantCode',
         header: 'Merchant',
         cell: ({ row }) => (
@@ -48,9 +65,31 @@ export function TransactionsPage() {
         ),
       },
       {
-        accessorKey: 'fuelLitres',
-        header: 'Litres',
-        cell: ({ getValue }) => `${formatNumber(getValue<number>(), 2)} L`,
+        id: 'purchase',
+        header: 'This purchase',
+        cell: ({ row }) => {
+          const purchase = row.original.transactionBreakdown
+          return (
+            <div className="min-w-36 space-y-0.5 text-xs">
+              <div className="flex justify-between gap-3">
+                <span className="text-(--text-muted)">Litres</span>
+                <span>{formatNumber(purchase.litresConsumed, 2)} L</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-(--text-muted)">Fuel cost</span>
+                <span>{formatCurrency(purchase.fuelCost)}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-(--text-muted)">Interest</span>
+                <span>{formatCurrency(purchase.interestAdded)}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-(--text-muted)">Total</span>
+                <span className="font-medium">{formatCurrency(purchase.purchaseTotal)}</span>
+              </div>
+            </div>
+          )
+        },
       },
       {
         accessorKey: 'pricePerLitre',
@@ -58,9 +97,14 @@ export function TransactionsPage() {
         cell: ({ getValue }) => formatCurrency(getValue<number>()),
       },
       {
-        accessorKey: 'amount',
-        header: 'Amount',
-        cell: ({ getValue }) => formatCurrency(getValue<number>()),
+        id: 'loan',
+        header: 'Loan snapshot',
+        cell: ({ row }) =>
+          row.original.loanBreakdown ? (
+            <LoanBreakdownCell breakdown={row.original.loanBreakdown} />
+          ) : (
+            <span className="text-xs text-(--text-muted)">No linked loan</span>
+          ),
       },
       {
         accessorKey: 'status',
@@ -75,14 +119,36 @@ export function TransactionsPage() {
     if (!data?.items.length) return
     downloadCsv(
       'fuel-sales.csv',
-      ['Date', 'Merchant', 'Business', 'Litres', 'Price/L', 'Amount', 'Status'],
+      [
+        'Date',
+        'Customer',
+        'Merchant',
+        'Litres',
+        'Fuel Cost',
+        'Interest',
+        'Purchase Total',
+        'Credit Limit',
+        'Disbursed',
+        'Spent',
+        'Unspent',
+        'Loan To Pay',
+        'Loan Litres',
+        'Status',
+      ],
       data.items.map((r) => [
         formatDateTime(r.completedAt ?? r.createdAt),
+        r.customerSnapshot ? `${r.customerSnapshot.firstName} ${r.customerSnapshot.lastName}` : '',
         r.merchantCode ?? '',
-        r.businessName ?? '',
-        String(r.fuelLitres),
-        String(r.pricePerLitre),
-        String(r.amount),
+        String(r.transactionBreakdown.litresConsumed),
+        String(r.transactionBreakdown.fuelCost),
+        String(r.transactionBreakdown.interestAdded),
+        String(r.transactionBreakdown.purchaseTotal),
+        r.loanBreakdown ? String(r.loanBreakdown.creditLimit) : '',
+        r.loanBreakdown ? String(r.loanBreakdown.amountDisbursed) : '',
+        r.loanBreakdown ? String(r.loanBreakdown.amountSpent) : '',
+        r.loanBreakdown ? String(r.loanBreakdown.amountUnspent) : '',
+        r.loanBreakdown ? String(r.loanBreakdown.amountToPay) : '',
+        r.loanBreakdown ? String(r.loanBreakdown.litresConsumed) : '',
         r.status ?? 'unknown',
       ]),
     )
@@ -92,7 +158,7 @@ export function TransactionsPage() {
     <div>
       <PageHeader
         title="Transactions"
-        description="All fuel sales across merchants"
+        description="Fuel purchases with per-sale and linked loan breakdowns"
         actions={
           <>
             <Button variant="secondary" onClick={() => refetch()}>

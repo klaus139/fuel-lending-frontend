@@ -12,7 +12,7 @@ import {
   Select,
   StatusBadge,
 } from '../components/ui'
-import { downloadCsv, formatDate } from '../lib/utils'
+import { downloadCsv, formatCurrency, formatDate } from '../lib/utils'
 import type { AdminCreateMerchantInput, AdminMerchantSummary } from '../types/api'
 
 const emptyCreateForm: AdminCreateMerchantInput = {
@@ -172,6 +172,16 @@ export function MerchantsPage() {
         ),
       },
       {
+        accessorKey: 'fuelPricePerLitre',
+        header: 'Price / L',
+        cell: ({ row }) =>
+          row.original.fuelPricePerLitre != null ? (
+            <span className="font-medium">{formatCurrency(row.original.fuelPricePerLitre)}</span>
+          ) : (
+            <span className="text-(--text-muted)">Not set</span>
+          ),
+      },
+      {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
@@ -210,12 +220,13 @@ export function MerchantsPage() {
     if (!data?.items.length) return
     downloadCsv(
       'merchants.csv',
-      ['Code', 'Business', 'Branch', 'City', 'Contact', 'Email', 'Status'],
+      ['Code', 'Business', 'Branch', 'City', 'Price/L', 'Contact', 'Email', 'Status'],
       data.items.map((m) => [
         m.merchantId,
         m.businessName,
         m.stationBranch,
         m.city,
+        m.fuelPricePerLitre != null ? String(m.fuelPricePerLitre) : '',
         m.merchantName,
         m.email,
         m.status,

@@ -12,7 +12,7 @@ import {
   Select,
   StatusBadge,
 } from '../components/ui'
-import { downloadCsv, formatCurrency, formatDate } from '../lib/utils'
+import { downloadCsv, formatCurrency, formatDate, formatNumber } from '../lib/utils'
 import type { Settlement } from '../types/api'
 
 export function SettlementsPage() {
@@ -31,11 +31,6 @@ export function SettlementsPage() {
         limit,
         status: (status || undefined) as Settlement['status'],
       }),
-  })
-
-  const generateMutation = useMutation({
-    mutationFn: () => adminApi.generateSettlements(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'settlements'] }),
   })
 
   const markPaidMutation = useMutation({
@@ -77,6 +72,14 @@ export function SettlementsPage() {
         cell: ({ getValue }) => formatCurrency(getValue<number>()),
       },
       {
+        accessorKey: 'totalLitres',
+        header: 'Litres',
+        cell: ({ row }) =>
+          row.original.totalLitres != null
+            ? `${formatNumber(row.original.totalLitres, 2)} L`
+            : '—',
+      },
+      {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
@@ -94,9 +97,11 @@ export function SettlementsPage() {
             <Button size="sm" onClick={() => setMarkPaid(row.original)}>
               Mark Paid
             </Button>
+          ) : row.original.status === 'paid' ? (
+            <span className="text-xs text-amber-500">Awaiting merchant</span>
           ) : (
-            <span className="text-xs text-(--text-muted)">
-              {row.original.paidAt ? formatDate(row.original.paidAt) : '—'}
+            <span className="text-xs text-emerald-500">
+              {row.original.confirmedAt ? formatDate(row.original.confirmedAt) : 'Confirmed'}
             </span>
           ),
       },
@@ -124,19 +129,11 @@ export function SettlementsPage() {
     <div>
       <PageHeader
         title="Settlements"
-        description="Merchant payout batches — mark paid after bank transfer"
+        description="Merchant payouts after reconciliation — mark paid after bank transfer"
         actions={
-          <>
-            <Button variant="secondary" onClick={handleExport}>
-              Export CSV
-            </Button>
-            <Button
-              onClick={() => generateMutation.mutate()}
-              disabled={generateMutation.isPending}
-            >
-              {generateMutation.isPending ? 'Generating...' : 'Generate Today'}
-            </Button>
-          </>
+          <Button variant="secondary" onClick={handleExport}>
+            Export CSV
+          </Button>
         }
       />
 
@@ -154,7 +151,8 @@ export function SettlementsPage() {
           <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
             <option value="">All statuses</option>
             <option value="pending">Pending</option>
-            <option value="paid">Paid</option>
+            <option value="paid">Paid (awaiting merchant)</option>
+            <option value="confirmed">Confirmed</option>
           </Select>
         }
       />
