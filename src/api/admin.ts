@@ -163,7 +163,11 @@ export const adminApi = {
   getLoanConfig: () => apiGet<AdminLoanConfig>('/admin/config/loan'),
 
   setLoanConfig: (body: {
+    serviceChargeMode?: 'fixed' | 'percent'
+    serviceChargePerLitre?: number
+    /** @deprecated use serviceChargePerLitre */
     interestPerLitre?: number
+    serviceChargePercent?: number
     overdueDailyInterestPercent?: number
   }) => apiPut<AdminLoanConfig>('/admin/config/loan', body),
 

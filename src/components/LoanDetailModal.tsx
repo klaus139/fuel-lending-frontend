@@ -85,11 +85,11 @@ export function LoanDetailModal({
               value={`${formatNumber(breakdown.litresConsumed, 2)} L`}
             />
             <DetailRow
-              label="Interest per litre"
+              label="Service charge / litre"
               value={formatCurrency(loan.interestPerLitre)}
             />
             <DetailRow
-              label="Interest accrued"
+              label="Service charge accrued"
               value={formatCurrency(breakdown.interestAccrued)}
             />
           </div>

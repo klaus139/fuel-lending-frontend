@@ -298,11 +298,20 @@ export type AdminCreateMerchantInput = {
   nin: string
 }
 
+export type ServiceChargeMode = 'fixed' | 'percent'
+
 export type AdminLoanConfig = {
+  serviceChargeMode: ServiceChargeMode
+  serviceChargePerLitre: number
+  /** @deprecated use serviceChargePerLitre */
   interestPerLitre: number
+  serviceChargePercent: number
   overdueDailyInterestPercent: number
   sources: {
+    serviceChargeMode: 'database' | 'env'
+    serviceChargePerLitre: 'database' | 'env'
     interestPerLitre: 'database' | 'env'
+    serviceChargePercent: 'database' | 'env'
     overdueDailyInterestPercent: 'database' | 'env'
   }
 }
