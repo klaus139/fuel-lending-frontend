@@ -224,15 +224,6 @@ export function ReconciliationPage() {
     [],
   )
 
-  const activeData =
-    view === 'merchants'
-      ? merchantsQuery.data
-      : view === 'snapshots'
-        ? snapshotsQuery.data
-        : transactionsQuery.data?.items
-          ? { items: transactionsQuery.data.items, pagination: transactionsQuery.data.pagination }
-          : undefined
-
   const isLoading =
     view === 'merchants'
       ? merchantsQuery.isLoading
@@ -306,23 +297,47 @@ export function ReconciliationPage() {
         </div>
       )}
 
-      <DataTable
-        data={activeData?.items ?? []}
-        columns={
-          view === 'merchants'
-            ? merchantColumns
-            : view === 'snapshots'
-              ? snapshotColumns
-              : transactionColumns
-        }
-        pagination={activeData && 'pagination' in activeData ? activeData.pagination : undefined}
-        onPageChange={setPage}
-        onLimitChange={(l) => {
-          setLimit(l)
-          setPage(1)
-        }}
-        loading={isLoading}
-      />
+      {view === 'merchants' && (
+        <DataTable
+          data={merchantsQuery.data?.items ?? []}
+          columns={merchantColumns}
+          pagination={merchantsQuery.data?.pagination}
+          onPageChange={setPage}
+          onLimitChange={(l) => {
+            setLimit(l)
+            setPage(1)
+          }}
+          loading={isLoading}
+        />
+      )}
+
+      {view === 'snapshots' && (
+        <DataTable
+          data={snapshotsQuery.data?.items ?? []}
+          columns={snapshotColumns}
+          pagination={snapshotsQuery.data?.pagination}
+          onPageChange={setPage}
+          onLimitChange={(l) => {
+            setLimit(l)
+            setPage(1)
+          }}
+          loading={isLoading}
+        />
+      )}
+
+      {view === 'transactions' && (
+        <DataTable
+          data={transactionsQuery.data?.items ?? []}
+          columns={transactionColumns}
+          pagination={transactionsQuery.data?.pagination}
+          onPageChange={setPage}
+          onLimitChange={(l) => {
+            setLimit(l)
+            setPage(1)
+          }}
+          loading={isLoading}
+        />
+      )}
 
       <Modal open={showSync} onClose={() => setShowSync(false)} title="Sync sales snapshot">
         <p className="mb-4 text-sm text-(--text-muted)">

@@ -97,10 +97,22 @@ export type UserAccountStatus = 'active' | 'blocked'
 export type AdminDashboardData = {
   generatedAt: string
   users: {
+    total: number
     customers: number
     merchants: number
     admins: number
     blocked: number
+    newCustomers7d: number
+    newCustomers30d: number
+  }
+  merchantProfiles: {
+    total: number
+    approved: number
+    pending: number
+    suspended: number
+    rejected: number
+    new7d: number
+    new30d: number
   }
   loans: {
     pending: number
@@ -117,6 +129,18 @@ export type AdminDashboardData = {
   sales: {
     todayCount: number
     todayVolume: number
+    last7DaysCount: number
+    last7DaysVolume: number
+    last30DaysCount: number
+    last30DaysVolume: number
+    allTimeCount: number
+    allTimeVolume: number
+  }
+  transactions: {
+    total: number
+    completed: number
+    pending: number
+    failed: number
   }
 }
 
@@ -367,6 +391,53 @@ export type AdminCreateMerchantInput = {
   businessLocation: string
   landmark: string
   nin: string
+}
+
+export type MerchantDetail = AdminMerchantSummary & {
+  rejectReason?: string
+  fuelPricePerLitre?: number
+}
+
+export type AdminMerchantBranchSummary = {
+  id: string
+  name: string
+  address: string
+  city: string
+  lga: string
+  state: string
+  landmark: string
+  status: string
+  isPrimary: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type AdminMerchantSellerSummary = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  branchId: string | null
+  branchName: string | null
+  accountStatus: string
+  createdAt: string
+}
+
+export type AdminMerchantSalesSummary = {
+  salesCount: number
+  grossAmount: number
+  fromDate?: string
+  toDate?: string
+  settlementStatus?: 'unsettled' | 'settled'
+  branchId?: string
+  sellerId?: string
+}
+
+export type AdminMerchantDailySalesRow = {
+  date: string
+  salesCount: number
+  grossAmount: number
 }
 
 export type ServiceChargeMode = 'fixed' | 'percent'

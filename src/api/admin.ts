@@ -17,6 +17,11 @@ import type {
   AdminOverdueLoanItem,
   AdminMerchantSummary,
   AdminCreateMerchantInput,
+  MerchantDetail,
+  AdminMerchantBranchSummary,
+  AdminMerchantSellerSummary,
+  AdminMerchantSalesSummary,
+  AdminMerchantDailySalesRow,
   Settlement,
   AdminFinanceSettlementRow,
   SalesQuery,
@@ -25,7 +30,6 @@ import type {
   MerchantsQuery,
   SettlementsQuery,
   LoanSummary,
-  AdminMerchantSummary as MerchantDetail,
   SupportTicketsQuery,
   SupportTicketSummary,
   SupportTicketDetail,
@@ -154,6 +158,41 @@ export const adminApi = {
 
   rejectMerchant: (merchantId: string, reason: string) =>
     apiPatch<MerchantDetail>(`/admin/merchants/${merchantId}/reject`, { reason }),
+
+  merchantBranches: (merchantId: string) =>
+    apiGet<AdminMerchantBranchSummary[]>(`/admin/merchants/${merchantId}/branches`),
+
+  merchantSellers: (merchantId: string, branchId?: string) =>
+    apiGet<AdminMerchantSellerSummary[]>(`/admin/merchants/${merchantId}/sellers`, {
+      ...(branchId ? { branchId } : {}),
+    }),
+
+  merchantSalesSummary: (
+    merchantId: string,
+    query?: { fromDate?: string; toDate?: string; settlementStatus?: string },
+  ) =>
+    apiGet<AdminMerchantSalesSummary>(
+      `/admin/merchants/${merchantId}/sales/summary`,
+      query as Record<string, unknown>,
+    ),
+
+  merchantDailySales: (
+    merchantId: string,
+    query?: { fromDate?: string; toDate?: string },
+  ) =>
+    apiGet<AdminMerchantDailySalesRow[]>(
+      `/admin/merchants/${merchantId}/sales/daily`,
+      query as Record<string, unknown>,
+    ),
+
+  merchantSales: (
+    merchantId: string,
+    query?: SalesQuery & { branchId?: string; sellerId?: string },
+  ) =>
+    apiGet<PaginatedResult<AdminSaleRow>>(
+      `/admin/merchants/${merchantId}/sales`,
+      query as Record<string, unknown>,
+    ),
 
   settlements: (query: SettlementsQuery) =>
     apiGet<PaginatedResult<Settlement>>('/admin/settlements', query as Record<string, unknown>),

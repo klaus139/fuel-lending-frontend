@@ -1,12 +1,23 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
 import { adminApi } from '../api/admin'
 import { LoanBreakdownCell } from '../components/LoanBreakdownCell'
 import { DataTable } from '../components/data-table/DataTable'
-import { Button, Input, PageHeader, Select, StatusBadge } from '../components/ui'
+import { Button, Input, KpiCard, PageHeader, Select, StatusBadge } from '../components/ui'
 import { downloadCsv, formatCurrency, formatDateTime, formatNumber } from '../lib/utils'
 import type { AdminSaleRow } from '../types/api'
+
+function toIsoStart(date: string): string | undefined {
+  if (!date) return undefined
+  return new Date(`${date}T00:00:00.000`).toISOString()
+}
+
+function toIsoEnd(date: string): string | undefined {
+  if (!date) return undefined
+  return new Date(`${date}T23:59:59.999`).toISOString()
+}
 
 export function TransactionsPage() {
   const [page, setPage] = useState(1)
@@ -14,11 +25,38 @@ export function TransactionsPage() {
   const [merchantCode, setMerchantCode] = useState('')
   const [status, setStatus] = useState('')
   const [settlementStatus, setSettlementStatus] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [sortBy, setSortBy] = useState<'createdAt' | 'amount' | 'completedAt'>('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
+  const fromIso = toIsoStart(fromDate)
+  const toIso = toIsoEnd(toDate)
+
+  const { data: dashboard } = useQuery({
+    queryKey: ['admin', 'dashboard'],
+    queryFn: adminApi.dashboard,
+  })
+
+  const { data: volume } = useQuery({
+    queryKey: ['admin', 'transaction-volume', fromIso, toIso],
+    queryFn: () => adminApi.transactionVolume(fromIso, toIso),
+  })
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['admin', 'sales', page, limit, merchantCode, status, settlementStatus, sortBy, sortOrder],
+    queryKey: [
+      'admin',
+      'sales',
+      page,
+      limit,
+      merchantCode,
+      status,
+      settlementStatus,
+      fromIso,
+      toIso,
+      sortBy,
+      sortOrder,
+    ],
     queryFn: () =>
       adminApi.sales({
         page,
@@ -26,6 +64,8 @@ export function TransactionsPage() {
         merchantCode: merchantCode || undefined,
         status: (status || undefined) as AdminSaleRow['status'],
         settlementStatus: (settlementStatus || undefined) as 'unsettled' | 'settled',
+        fromDate: fromIso,
+        toDate: toIso,
         sortBy,
         sortOrder,
       }),
@@ -158,7 +198,7 @@ export function TransactionsPage() {
     <div>
       <PageHeader
         title="Transactions"
-        description="Fuel purchases with per-sale and linked loan breakdowns"
+        description="All fuel purchases — filter by date range, merchant, and status"
         actions={
           <>
             <Button variant="secondary" onClick={() => refetch()}>
@@ -170,6 +210,33 @@ export function TransactionsPage() {
           </>
         }
       />
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Total transactions"
+          value={String(dashboard?.transactions.total ?? data?.pagination.total ?? '—')}
+          sub={`${dashboard?.transactions.completed ?? 0} completed · ${dashboard?.transactions.pending ?? 0} pending`}
+          accent="blue"
+        />
+        <KpiCard
+          label="Filtered rows"
+          value={String(data?.pagination.total ?? '—')}
+          sub="Matching current filters"
+          accent="green"
+        />
+        <KpiCard
+          label="Filtered volume"
+          value={formatCurrency(volume?.totalVolume ?? 0)}
+          sub={`${volume?.totalCount ?? 0} completed in range`}
+          accent="amber"
+        />
+        <KpiCard
+          label="Today"
+          value={formatCurrency(dashboard?.sales.todayVolume ?? 0)}
+          sub={`${dashboard?.sales.todayCount ?? 0} sales today`}
+          accent="red"
+        />
+      </div>
 
       <DataTable
         data={data?.items ?? []}
@@ -183,6 +250,24 @@ export function TransactionsPage() {
         loading={isLoading}
         toolbar={
           <>
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value)
+                setPage(1)
+              }}
+              className="w-40"
+            />
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value)
+                setPage(1)
+              }}
+              className="w-40"
+            />
             <Input
               placeholder="Merchant code (MCH...)"
               value={merchantCode}
@@ -202,7 +287,9 @@ export function TransactionsPage() {
               <option value="">All statuses</option>
               <option value="completed">Completed</option>
               <option value="pending">Pending</option>
+              <option value="awaiting_confirmation">Awaiting</option>
               <option value="declined">Declined</option>
+              <option value="failed">Failed</option>
             </Select>
             <Select
               value={settlementStatus}
@@ -215,10 +302,7 @@ export function TransactionsPage() {
               <option value="unsettled">Unsettled</option>
               <option value="settled">Settled</option>
             </Select>
-            <Select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            >
+            <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
               <option value="createdAt">Sort: Date</option>
               <option value="amount">Sort: Amount</option>
               <option value="completedAt">Sort: Completed</option>
@@ -230,6 +314,12 @@ export function TransactionsPage() {
               <option value="desc">Desc</option>
               <option value="asc">Asc</option>
             </Select>
+            <Link
+              to="/"
+              className="inline-flex items-center rounded-lg border border-(--border) px-3 py-2 text-xs text-(--text-muted) hover:text-(--text-primary)"
+            >
+              Dashboard
+            </Link>
           </>
         }
       />

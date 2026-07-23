@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
 import { adminApi } from '../api/admin'
@@ -7,6 +8,7 @@ import {
   Button,
   FormField,
   Input,
+  KpiCard,
   Modal,
   PageHeader,
   Select,
@@ -104,6 +106,16 @@ export function MerchantsPage() {
       }),
   })
 
+  const { data: dashboard } = useQuery({
+    queryKey: ['admin', 'dashboard'],
+    queryFn: adminApi.dashboard,
+  })
+
+  const { data: pendingMerchants } = useQuery({
+    queryKey: ['admin', 'merchants', 'pending-count'],
+    queryFn: () => adminApi.merchants({ page: 1, limit: 1, status: 'pending' }),
+  })
+
   const updateMutation = useMutation({
     mutationFn: () => adminApi.updateMerchant(editMerchant!.id, editForm),
     onSuccess: () => {
@@ -196,6 +208,12 @@ export function MerchantsPage() {
         header: 'Actions',
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-1">
+            <Link
+              to={`/merchants/${row.original.id}`}
+              className="inline-flex items-center rounded-lg border border-(--border) bg-(--bg-hover) px-3 py-1.5 text-xs font-medium text-(--text-primary) hover:bg-(--border)"
+            >
+              View
+            </Link>
             <Button size="sm" variant="secondary" onClick={() => openEdit(row.original)}>
               Edit
             </Button>
@@ -238,7 +256,7 @@ export function MerchantsPage() {
     <div>
       <PageHeader
         title="Merchants"
-        description="Fuel stations and seller accounts"
+        description="Fuel stations — view sales, branches, and staff"
         actions={
           <>
             <Button variant="secondary" onClick={handleExport}>
@@ -248,6 +266,35 @@ export function MerchantsPage() {
           </>
         }
       />
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Total merchants"
+          value={String(dashboard?.merchantProfiles.total ?? data?.pagination.total ?? '—')}
+          sub={`${dashboard?.merchantProfiles.approved ?? 0} approved`}
+          accent="green"
+        />
+        <KpiCard
+          label="New (7 days)"
+          value={String(dashboard?.merchantProfiles.new7d ?? '—')}
+          sub={`${dashboard?.merchantProfiles.new30d ?? 0} in last 30 days`}
+          accent="blue"
+        />
+        <KpiCard
+          label="Pending approval"
+          value={String(
+            dashboard?.merchantProfiles.pending ?? pendingMerchants?.pagination.total ?? '—',
+          )}
+          sub={`${dashboard?.merchantProfiles.suspended ?? 0} suspended`}
+          accent="amber"
+        />
+        <KpiCard
+          label="Showing"
+          value={String(data?.pagination.total ?? '—')}
+          sub="Matching current status filter"
+          accent="red"
+        />
+      </div>
 
       <DataTable
         data={data?.items ?? []}

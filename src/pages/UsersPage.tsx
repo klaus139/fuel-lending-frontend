@@ -8,6 +8,7 @@ import {
   Button,
   FormField,
   Input,
+  KpiCard,
   Modal,
   PageHeader,
   Select,
@@ -36,6 +37,11 @@ export function UsersPage() {
         role: (role || undefined) as AdminUserSummary['role'],
         accountStatus: (accountStatus || undefined) as AdminUserSummary['accountStatus'],
       }),
+  })
+
+  const { data: dashboard } = useQuery({
+    queryKey: ['admin', 'dashboard'],
+    queryFn: adminApi.dashboard,
   })
 
   const updateMutation = useMutation({
@@ -151,13 +157,40 @@ export function UsersPage() {
     <div>
       <PageHeader
         title="Users"
-        description="Manage platform users"
+        description="Customers, merchants, and admins"
         actions={
           <Button variant="secondary" onClick={handleExport}>
             Export CSV
           </Button>
         }
       />
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Total users"
+          value={String(dashboard?.users.total ?? data?.pagination.total ?? '—')}
+          sub={`${dashboard?.users.customers ?? 0} customers`}
+          accent="green"
+        />
+        <KpiCard
+          label="New customers (7d)"
+          value={String(dashboard?.users.newCustomers7d ?? '—')}
+          sub={`${dashboard?.users.newCustomers30d ?? 0} in last 30 days`}
+          accent="blue"
+        />
+        <KpiCard
+          label="Merchant accounts"
+          value={String(dashboard?.users.merchants ?? '—')}
+          sub={`${dashboard?.users.admins ?? 0} admins`}
+          accent="amber"
+        />
+        <KpiCard
+          label="Blocked"
+          value={String(dashboard?.users.blocked ?? '—')}
+          sub={`${data?.pagination.total ?? 0} match current filters`}
+          accent="red"
+        />
+      </div>
 
       <DataTable
         data={data?.items ?? []}

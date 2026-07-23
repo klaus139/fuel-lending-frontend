@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Bar,
@@ -57,43 +58,134 @@ export function DashboardPage() {
         description={`Last updated ${new Date(dashboard.generatedAt).toLocaleString()}`}
       />
 
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--text-muted)">
+        Users
+      </h2>
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Link to="/users" className="block transition hover:opacity-90">
+          <KpiCard
+            label="Total users"
+            value={String(dashboard.users.total)}
+            sub={`${dashboard.users.customers} customers · ${dashboard.users.blocked} blocked`}
+            accent="green"
+          />
+        </Link>
+        <Link to="/users" className="block transition hover:opacity-90">
+          <KpiCard
+            label="New customers (7d)"
+            value={String(dashboard.users.newCustomers7d)}
+            sub={`${dashboard.users.newCustomers30d} in last 30 days`}
+            accent="blue"
+          />
+        </Link>
+        <Link to="/merchants" className="block transition hover:opacity-90">
+          <KpiCard
+            label="Merchant profiles"
+            value={String(dashboard.merchantProfiles.total)}
+            sub={`${dashboard.merchantProfiles.approved} approved · ${dashboard.merchantProfiles.pending} pending`}
+            accent="amber"
+          />
+        </Link>
+        <Link to="/merchants" className="block transition hover:opacity-90">
+          <KpiCard
+            label="New merchants (7d)"
+            value={String(dashboard.merchantProfiles.new7d)}
+            sub={`${dashboard.merchantProfiles.new30d} in last 30 days`}
+            accent="red"
+          />
+        </Link>
+      </div>
+
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--text-muted)">
+        Transactions & sales
+      </h2>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Link to="/transactions" className="block transition hover:opacity-90">
+          <KpiCard
+            label="All transactions"
+            value={String(dashboard.transactions.total)}
+            sub={`${dashboard.transactions.completed} completed · ${dashboard.transactions.pending} open`}
+            accent="blue"
+          />
+        </Link>
+        <Link to="/transactions" className="block transition hover:opacity-90">
+          <KpiCard
+            label="Today's sales"
+            value={formatCurrency(dashboard.sales.todayVolume)}
+            sub={`${dashboard.sales.todayCount} purchases`}
+            accent="green"
+          />
+        </Link>
+        <Link to="/transactions" className="block transition hover:opacity-90">
+          <KpiCard
+            label="Last 30 days"
+            value={formatCurrency(dashboard.sales.last30DaysVolume)}
+            sub={`${dashboard.sales.last30DaysCount} purchases`}
+            accent="amber"
+          />
+        </Link>
+        <Link to="/transactions" className="block transition hover:opacity-90">
+          <KpiCard
+            label="All-time sales"
+            value={formatCurrency(dashboard.sales.allTimeVolume)}
+            sub={`${dashboard.sales.allTimeCount} completed`}
+            accent="red"
+          />
+        </Link>
+      </div>
+
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--text-muted)">
+        Loans & settlements
+      </h2>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Link to="/loans" className="block transition hover:opacity-90">
+          <KpiCard
+            label="Outstanding loans"
+            value={formatCurrency(dashboard.loans.totalOutstanding)}
+            sub={`${dashboard.loans.overdue} overdue · ${dashboard.loans.active} active`}
+            accent="amber"
+          />
+        </Link>
+        <Link to="/settlements" className="block transition hover:opacity-90">
+          <KpiCard
+            label="Pending settlements"
+            value={formatCurrency(dashboard.settlements.pendingAmount)}
+            sub={`${dashboard.settlements.pendingCount} batches · ${dashboard.settlements.paidThisMonth} paid this month`}
+            accent="red"
+          />
+        </Link>
         <KpiCard
-          label="Customers"
-          value={String(dashboard.users.customers)}
-          sub={`${dashboard.users.merchants} merchants · ${dashboard.users.blocked} blocked`}
-          accent="green"
-        />
-        <KpiCard
-          label="Today's Sales"
-          value={formatCurrency(dashboard.sales.todayVolume)}
-          sub={`${dashboard.sales.todayCount} transactions`}
+          label="Merchant pending"
+          value={String(dashboard.merchantProfiles.pending)}
+          sub={`${dashboard.merchantProfiles.suspended} suspended · ${dashboard.merchantProfiles.rejected} rejected`}
           accent="blue"
         />
         <KpiCard
-          label="Outstanding Loans"
-          value={formatCurrency(dashboard.loans.totalOutstanding)}
-          sub={`${dashboard.loans.overdue} overdue`}
-          accent="amber"
-        />
-        <KpiCard
-          label="Pending Settlements"
-          value={formatCurrency(dashboard.settlements.pendingAmount)}
-          sub={`${dashboard.settlements.pendingCount} batches · ${dashboard.settlements.paidThisMonth} paid this month`}
-          accent="red"
+          label="Failed / declined tx"
+          value={String(dashboard.transactions.failed)}
+          sub="Cancelled, declined, expired, failed"
+          accent="green"
         />
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
-          <h3 className="mb-4 text-sm font-medium text-(--text-secondary)">
-            Transaction Volume (30 days)
-          </h3>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-medium text-(--text-secondary)">
+              Transaction Volume (30 days)
+            </h3>
+            <Link to="/transactions" className="text-xs text-emerald-500 hover:underline">
+              View all →
+            </Link>
+          </div>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={volume?.byDay ?? []}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-              <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickFormatter={(v) => `₦${(v / 1000).toFixed(0)}k`} />
+              <YAxis
+                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                tickFormatter={(v) => `₦${(v / 1000).toFixed(0)}k`}
+              />
               <Tooltip
                 contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
                 formatter={(v) => [formatCurrency(Number(v)), 'Volume']}
@@ -163,12 +255,15 @@ export function DashboardPage() {
             <div className="flex justify-between">
               <dt className="text-(--text-muted)">Pending</dt>
               <dd className="font-medium text-amber-500">
-                {formatCurrency(finance?.settlements.pendingAmount ?? 0)} ({finance?.settlements.pendingCount ?? 0})
+                {formatCurrency(finance?.settlements.pendingAmount ?? 0)} (
+                {finance?.settlements.pendingCount ?? 0})
               </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-(--text-muted)">Paid Total</dt>
-              <dd className="font-medium text-emerald-500">{formatCurrency(finance?.settlements.paidAmount ?? 0)}</dd>
+              <dd className="font-medium text-emerald-500">
+                {formatCurrency(finance?.settlements.paidAmount ?? 0)}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-(--text-muted)">Paid Batches</dt>

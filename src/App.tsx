@@ -10,6 +10,7 @@ import { TransactionsPage } from './pages/TransactionsPage'
 import { UsersPage } from './pages/UsersPage'
 import { UserDetailPage } from './pages/UserDetailPage'
 import { MerchantsPage } from './pages/MerchantsPage'
+import { MerchantDetailPage } from './pages/MerchantDetailPage'
 import { LoansPage } from './pages/LoansPage'
 import { LoanDashboardPage } from './pages/LoanDashboardPage'
 import { LoanDetailPage } from './pages/LoanDetailPage'
@@ -50,6 +51,7 @@ export default function App() {
                   <Route path="users" element={<UsersPage />} />
                   <Route path="users/:userId" element={<UserDetailPage />} />
                   <Route path="merchants" element={<MerchantsPage />} />
+                  <Route path="merchants/:merchantId" element={<MerchantDetailPage />} />
                   <Route path="loans" element={<LoanDashboardPage />} />
                   <Route path="loans/manage" element={<LoansPage />} />
                   <Route path="loans/:loanId" element={<LoanDetailPage />} />
