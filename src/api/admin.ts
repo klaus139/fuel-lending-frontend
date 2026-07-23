@@ -34,6 +34,9 @@ import type {
   ReconciliationMerchantRow,
   ReconciliationSnapshotRow,
   SnapshotTransactionsResult,
+  LoanReconMismatch,
+  TriggerRepaymentResult,
+  SendLoanReminderResult,
 } from '../types/api'
 
 export const authApi = {
@@ -106,6 +109,16 @@ export const adminApi = {
   overdueLoans: (page: number, limit: number) =>
     apiGet<PaginatedResult<AdminOverdueLoanItem>>('/admin/loans/overdue', { page, limit }),
 
+  collectionsByDpd: (page: number, limit: number, dpdBucket?: string) =>
+    apiGet<PaginatedResult<AdminOverdueLoanItem>>('/admin/loans/collections', {
+      page,
+      limit,
+      ...(dpdBucket ? { dpdBucket } : {}),
+    }),
+
+  loanReconMismatches: () =>
+    apiGet<{ items: LoanReconMismatch[] }>('/admin/loans/recon-mismatches'),
+
   getLoan: (loanId: string) => apiGet<AdminLoanListItem>(`/admin/loans/${loanId}`),
 
   approveLoan: (loanId: string) => apiPatch<LoanSummary>(`/admin/loans/${loanId}/approve`),
@@ -115,6 +128,12 @@ export const adminApi = {
 
   closeLoan: (loanId: string, resolution: 'repaid' | 'defaulted', note?: string) =>
     apiPost<LoanSummary>(`/admin/loans/${loanId}/close`, { resolution, note }),
+
+  triggerLoanRepayment: (loanId: string) =>
+    apiPost<TriggerRepaymentResult>(`/admin/loans/${loanId}/trigger-repayment`),
+
+  sendLoanReminder: (loanId: string) =>
+    apiPost<SendLoanReminderResult>(`/admin/loans/${loanId}/send-reminder`),
 
   merchants: (query: MerchantsQuery) =>
     apiGet<PaginatedResult<AdminMerchantSummary>>('/admin/merchants', query as Record<string, unknown>),

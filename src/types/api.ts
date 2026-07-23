@@ -50,6 +50,37 @@ export type LoanStatus =
   | 'defaulted'
   | 'rejected'
 
+export type LoanCanonicalStatus =
+  | 'DRAFT'
+  | 'APPLICATION_SUBMITTED'
+  | 'UNDER_REVIEW'
+  | 'REJECTED'
+  | 'APPROVED'
+  | 'PENDING_DISBURSEMENT'
+  | 'DISBURSEMENT_FAILED'
+  | 'CANCELLED'
+  | 'ACTIVE'
+  | 'CLOSED_PAID_OFF'
+  | 'DEFAULTED'
+  | 'WRITTEN_OFF'
+  | 'RECOVERED'
+
+export type LoanDpdBucket =
+  | 'CURRENT'
+  | 'DPD_1_30'
+  | 'DPD_31_60'
+  | 'DPD_61_90'
+  | 'DPD_90_PLUS'
+
+export type LoanStatusHistoryEntry = {
+  from: string
+  to: string
+  at: string
+  actorId?: string
+  reason?: string
+  eventId?: string
+}
+
 export type TransactionStatus =
   | 'pending'
   | 'awaiting_confirmation'
@@ -142,7 +173,81 @@ export type LoanBreakdown = {
   amountToPay: number
   litresConsumed: number
   interestAccrued: number
+  serviceCharge?: number
+  overdueInterest?: number
   totalOwed: number
+}
+
+export type LoanSummary = {
+  id: string
+  principalAmount: number
+  interestAmount: number
+  serviceChargeAmount?: number
+  overdueInterestAmount?: number
+  totalAmountDue: number
+  amountRepaid: number
+  outstandingBalance: number
+  fuelBalanceGranted: number
+  fuelBalanceUsed: number
+  totalLitresPurchased: number
+  interestPerLitre: number
+  serviceChargePerLitre?: number
+  tenureDays: number
+  status: LoanStatus
+  canonicalStatus?: LoanCanonicalStatus | string
+  dpdBucket?: LoanDpdBucket | string
+  version?: number
+  statusHistory?: LoanStatusHistoryEntry[]
+  disbursedAt?: string
+  dueDate: string
+  rejectReason?: string
+  createdAt: string
+}
+
+export type AdminLoanListItem = LoanSummary & {
+  breakdown: LoanBreakdown
+  customer: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    phone: string
+  }
+}
+
+export type AdminOverdueLoanItem = AdminLoanListItem & {
+  daysOverdue: number
+}
+
+export type LoanReconMismatch = {
+  _id: string
+  loanId: string
+  projectedOutstanding: number
+  ledgerOutstanding: number
+  diff: number
+  checkedAt: string
+  resolvedAt?: string
+}
+
+export type TriggerRepaymentResult = {
+  loan: LoanSummary
+  repaymentId: string | null
+  allocation: {
+    overdueInterestPortion: number
+    serviceChargePortion: number
+    principalPortion: number
+    interestPortion: number
+    totalPayment: number
+  } | null
+  walletBalance: number
+  message: string
+}
+
+export type SendLoanReminderResult = {
+  sent: true
+  email: string
+  outstandingBalance: number
+  dueDate: string
 }
 
 export type AdminTransactionBreakdown = {
@@ -174,40 +279,6 @@ export type AdminSaleRow = {
   }
   transactionBreakdown: AdminTransactionBreakdown
   loanBreakdown?: LoanBreakdown
-}
-
-export type LoanSummary = {
-  id: string
-  principalAmount: number
-  interestAmount: number
-  totalAmountDue: number
-  amountRepaid: number
-  outstandingBalance: number
-  fuelBalanceGranted: number
-  fuelBalanceUsed: number
-  totalLitresPurchased: number
-  interestPerLitre: number
-  tenureDays: number
-  status: LoanStatus
-  disbursedAt?: string
-  dueDate: string
-  rejectReason?: string
-  createdAt: string
-}
-
-export type AdminLoanListItem = LoanSummary & {
-  breakdown: LoanBreakdown
-  customer: {
-    id: string
-    firstName: string
-    lastName: string
-    email: string
-    phone: string
-  }
-}
-
-export type AdminOverdueLoanItem = AdminLoanListItem & {
-  daysOverdue: number
 }
 
 export type AdminMerchantSummary = {
@@ -510,6 +581,8 @@ export type AdminRepaymentRow = {
   userId: string
   amount: number
   interestPortion: number
+  overdueInterestPortion?: number
+  serviceChargePortion?: number
   principalPortion: number
   source: string
   createdAt: string

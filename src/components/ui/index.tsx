@@ -2,21 +2,52 @@ import type { ReactNode } from 'react'
 import { cn } from '../../lib/utils'
 
 export function StatusBadge({ status }: { status?: string | null }) {
-  const label = (status ?? 'unknown').replace(/_/g, ' ')
+  const raw = status ?? 'unknown'
+  const label = raw.replace(/_/g, ' ')
+  const normalized = raw.toLowerCase()
+
+  const tone =
+    normalized === 'active' ||
+    normalized === 'approved' ||
+    normalized === 'completed' ||
+    normalized === 'paid' ||
+    normalized === 'resolved' ||
+    normalized === 'closed_paid_off' ||
+    normalized === 'current' ||
+    normalized === 'recovered'
+      ? 'bg-emerald-500/15 text-emerald-500'
+      : normalized === 'pending' ||
+          normalized === 'partially_repaid' ||
+          normalized === 'awaiting_confirmation' ||
+          normalized === 'open' ||
+          normalized === 'under_review' ||
+          normalized === 'application_submitted' ||
+          normalized === 'approved' ||
+          normalized === 'pending_disbursement' ||
+          normalized === 'dpd_1_30' ||
+          normalized === 'dpd_31_60'
+        ? 'bg-amber-500/15 text-amber-500'
+        : normalized === 'in_progress'
+          ? 'bg-blue-500/15 text-blue-400'
+          : normalized === 'rejected' ||
+              normalized === 'declined' ||
+              normalized === 'defaulted' ||
+              normalized === 'blocked' ||
+              normalized === 'suspended' ||
+              normalized === 'closed' ||
+              normalized === 'written_off' ||
+              normalized === 'cancelled' ||
+              normalized === 'disbursement_failed' ||
+              normalized === 'dpd_61_90' ||
+              normalized === 'dpd_90_plus'
+            ? 'bg-red-500/15 text-red-400'
+            : 'bg-zinc-500/15 text-zinc-400'
 
   return (
     <span
       className={cn(
         'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize',
-        status === 'active' || status === 'approved' || status === 'completed' || status === 'paid' || status === 'resolved'
-          ? 'bg-emerald-500/15 text-emerald-500'
-          : status === 'pending' || status === 'partially_repaid' || status === 'awaiting_confirmation' || status === 'open'
-            ? 'bg-amber-500/15 text-amber-500'
-            : status === 'in_progress'
-              ? 'bg-blue-500/15 text-blue-500'
-              : status === 'rejected' || status === 'declined' || status === 'defaulted' || status === 'blocked' || status === 'suspended' || status === 'closed'
-              ? 'bg-red-500/15 text-red-500'
-              : 'bg-zinc-500/15 text-zinc-400',
+        tone,
       )}
     >
       {label}

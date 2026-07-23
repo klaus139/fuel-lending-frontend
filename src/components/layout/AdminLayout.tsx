@@ -9,7 +9,7 @@ const navItems = [
   { to: '/transactions', label: 'Transactions', icon: '⛽' },
   { to: '/users', label: 'Users', icon: '👥' },
   { to: '/merchants', label: 'Merchants', icon: '🏪' },
-  { to: '/loans', label: 'Loans', icon: '💳' },
+  { to: '/loans', label: 'Loans', icon: '💳', end: false },
   { to: '/settlements', label: 'Settlements', icon: '💰' },
   { to: '/reconciliation', label: 'Reconciliation', icon: '🧾' },
   { to: '/support', label: 'Support', icon: '🎫' },
@@ -39,7 +39,7 @@ export function AdminLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === '/'}
+              end={item.to === '/' || item.end === true}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
