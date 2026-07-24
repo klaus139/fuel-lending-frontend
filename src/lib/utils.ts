@@ -1,10 +1,11 @@
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(Number(amount))) return '—'
   return new Intl.NumberFormat('en-NG', {
     style: 'currency',
     currency: 'NGN',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount)
+  }).format(Number(amount))
 }
 
 export function formatNumber(n: number, decimals = 2): string {

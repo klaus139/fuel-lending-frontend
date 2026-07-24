@@ -206,6 +206,12 @@ export const adminApi = {
   markSettlementPaid: (settlementId: string, paymentReference?: string) =>
     apiPost<Settlement>(`/admin/settlements/${settlementId}/mark-paid`, paymentReference ? { paymentReference } : {}),
 
+  requestSettlementApproval: (settlementId: string) =>
+    apiPost<Settlement>(`/admin/settlements/${settlementId}/request-approval`),
+
+  approveSettlement: (settlementId: string) =>
+    apiPost<Settlement>(`/admin/settlements/${settlementId}/approve`),
+
   supportTickets: (query: SupportTicketsQuery) =>
     apiGet<PaginatedResult<SupportTicketSummary>>('/admin/support/tickets', query as Record<string, unknown>),
 

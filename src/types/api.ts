@@ -91,6 +91,7 @@ export type TransactionStatus =
 
 export type MerchantStatus = 'pending' | 'approved' | 'rejected' | 'suspended'
 export type SettlementStatus = 'pending' | 'paid' | 'confirmed'
+export type SettlementApprovalStatus = 'none' | 'pending_approval' | 'approved' | 'rejected'
 export type MerchantSalesSnapshotStatus = 'open' | 'reconciled' | 'settled'
 export type UserAccountStatus = 'active' | 'blocked'
 
@@ -335,6 +336,7 @@ export type Settlement = {
   totalLitres?: number
   transactionCount: number
   status: SettlementStatus
+  approvalStatus?: SettlementApprovalStatus
   source: 'auto' | 'manual'
   note?: string
   paidAt?: string

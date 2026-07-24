@@ -97,44 +97,101 @@ client.interceptors.response.use(
   },
 )
 
-export async function apiGet<T>(path: string, params?: Record<string, unknown>): Promise<T> {
-  const res = await client.get<ApiEnvelope<T>>(path, { params })
-  if (!res.data.success) {
-    throw new ApiError(res.data.message, res.status, res.data.data)
+/** Prefer backend envelope `message` over Axios "Request failed with status code 400". */
+export function getApiErrorMessage(error: unknown, fallback = 'Request failed'): string {
+  if (error instanceof ApiError && error.message) return error.message
+
+  if (axios.isAxiosError(error)) {
+    const payload = error.response?.data as { message?: unknown } | undefined
+    if (typeof payload?.message === 'string' && payload.message.trim()) {
+      return payload.message
+    }
   }
-  return res.data.data
+
+  if (
+    error instanceof Error &&
+    error.message &&
+    !/^Request failed with status code \d+$/i.test(error.message)
+  ) {
+    return error.message
+  }
+
+  return fallback
+}
+
+function rethrowAsApiError(error: unknown): never {
+  if (error instanceof ApiError) throw error
+
+  if (axios.isAxiosError(error)) {
+    const envelope = error.response?.data as ApiEnvelope<unknown> | undefined
+    throw new ApiError(
+      getApiErrorMessage(error),
+      error.response?.status ?? 0,
+      envelope?.data ?? null,
+    )
+  }
+
+  throw error
+}
+
+export async function apiGet<T>(path: string, params?: Record<string, unknown>): Promise<T> {
+  try {
+    const res = await client.get<ApiEnvelope<T>>(path, { params })
+    if (!res.data.success) {
+      throw new ApiError(res.data.message, res.status, res.data.data)
+    }
+    return res.data.data
+  } catch (error) {
+    rethrowAsApiError(error)
+  }
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
-  const res = await client.post<ApiEnvelope<T>>(path, body)
-  if (!res.data.success) {
-    throw new ApiError(res.data.message, res.status, res.data.data)
+  try {
+    const res = await client.post<ApiEnvelope<T>>(path, body)
+    if (!res.data.success) {
+      throw new ApiError(res.data.message, res.status, res.data.data)
+    }
+    return res.data.data
+  } catch (error) {
+    rethrowAsApiError(error)
   }
-  return res.data.data
 }
 
 export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
-  const res = await client.patch<ApiEnvelope<T>>(path, body)
-  if (!res.data.success) {
-    throw new ApiError(res.data.message, res.status, res.data.data)
+  try {
+    const res = await client.patch<ApiEnvelope<T>>(path, body)
+    if (!res.data.success) {
+      throw new ApiError(res.data.message, res.status, res.data.data)
+    }
+    return res.data.data
+  } catch (error) {
+    rethrowAsApiError(error)
   }
-  return res.data.data
 }
 
 export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
-  const res = await client.put<ApiEnvelope<T>>(path, body)
-  if (!res.data.success) {
-    throw new ApiError(res.data.message, res.status, res.data.data)
+  try {
+    const res = await client.put<ApiEnvelope<T>>(path, body)
+    if (!res.data.success) {
+      throw new ApiError(res.data.message, res.status, res.data.data)
+    }
+    return res.data.data
+  } catch (error) {
+    rethrowAsApiError(error)
   }
-  return res.data.data
 }
 
 export async function apiDelete<T>(path: string): Promise<T> {
-  const res = await client.delete<ApiEnvelope<T>>(path)
-  if (!res.data.success) {
-    throw new ApiError(res.data.message, res.status, res.data.data)
+  try {
+    const res = await client.delete<ApiEnvelope<T>>(path)
+    if (!res.data.success) {
+      throw new ApiError(res.data.message, res.status, res.data.data)
+    }
+    return res.data.data
+  } catch (error) {
+    rethrowAsApiError(error)
   }
-  return res.data.data
 }
 
 export default client
