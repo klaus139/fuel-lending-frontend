@@ -194,4 +194,18 @@ export async function apiDelete<T>(path: string): Promise<T> {
   }
 }
 
+export async function apiPostFormData<T>(path: string, formData: FormData): Promise<T> {
+  try {
+    const res = await client.post<ApiEnvelope<T>>(path, formData, {
+      headers: { 'Content-Type': undefined },
+    })
+    if (!res.data.success) {
+      throw new ApiError(res.data.message, res.status, res.data.data)
+    }
+    return res.data.data
+  } catch (error) {
+    rethrowAsApiError(error)
+  }
+}
+
 export default client

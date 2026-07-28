@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost, apiPut, setTokens, clearTokens } from './client'
+import { apiGet, apiPatch, apiPost, apiPostFormData, apiPut, setTokens, clearTokens } from './client'
 import type {
   AuthTokensResponse,
   AuthUser,
@@ -41,6 +41,11 @@ import type {
   LoanReconMismatch,
   TriggerRepaymentResult,
   SendLoanReminderResult,
+  AdminKycSubmission,
+  AdminKycSubmitInput,
+  AdminKycSubmitResult,
+  AdminVirtualAccount,
+  KycStatus,
 } from '../types/api'
 
 export const authApi = {
@@ -106,6 +111,37 @@ export const adminApi = {
 
   updateUserStatus: (userId: string, accountStatus: 'active' | 'blocked') =>
     apiPatch<AdminUserSummary>(`/admin/users/${userId}/status`, { accountStatus }),
+
+  listKyc: (status?: Exclude<KycStatus, 'not_submitted'>) =>
+    apiGet<AdminKycSubmission[]>('/admin/kyc', status ? { status } : undefined),
+
+  getKyc: (kycId: string) => apiGet<AdminKycSubmission>(`/admin/kyc/${kycId}`),
+
+  approveKyc: (kycId: string) => apiPatch<AdminKycSubmission>(`/admin/kyc/${kycId}/approve`),
+
+  rejectKyc: (kycId: string, reason: string) =>
+    apiPatch<AdminKycSubmission>(`/admin/kyc/${kycId}/reject`, { reason }),
+
+  reverifyKyc: (kycId: string) => apiPost<AdminKycSubmission>(`/admin/kyc/${kycId}/reverify`),
+
+  submitKycForUser: (userId: string, input: AdminKycSubmitInput) => {
+    const form = new FormData()
+    form.append('bvn', input.bvn)
+    form.append('nin', input.nin)
+    form.append('dateOfBirth', input.dateOfBirth)
+    form.append('address', input.address)
+    form.append('city', input.city)
+    form.append('state', input.state)
+    form.append('lga', input.lga)
+    form.append('motorType', input.motorType)
+    form.append('motorRegistrationNumber', input.motorRegistrationNumber)
+    form.append('photo', input.photo)
+    form.append('motorPhoto', input.motorPhoto)
+    return apiPostFormData<AdminKycSubmitResult>(`/admin/users/${userId}/kyc`, form)
+  },
+
+  provisionUserWallet: (userId: string) =>
+    apiPost<AdminVirtualAccount>(`/admin/users/${userId}/wallet/provision`),
 
   loans: (query: LoansQuery) =>
     apiGet<PaginatedResult<AdminLoanListItem>>('/admin/loans', query as Record<string, unknown>),

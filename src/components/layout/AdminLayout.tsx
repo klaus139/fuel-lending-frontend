@@ -8,6 +8,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
   { to: '/transactions', label: 'Transactions', icon: '⛽' },
   { to: '/users', label: 'Users', icon: '👥' },
+  { to: '/kyc', label: 'KYC', icon: '🪪' },
   { to: '/merchants', label: 'Merchants', icon: '🏪' },
   { to: '/loans', label: 'Loans', icon: '💳', end: false },
   { to: '/settlements', label: 'Settlements', icon: '💰' },

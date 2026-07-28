@@ -596,7 +596,7 @@ export type AdminWalletOverview = {
     status: string
     provider: string
     createdAt: string
-  }
+  } | null
   balance: number
   currency: string
   recentTransactions: {
@@ -607,6 +607,54 @@ export type AdminWalletOverview = {
     description?: string
     createdAt: string
   }[]
+}
+
+export type AdminKycSubmission = {
+  id: string
+  userId: string
+  status: Exclude<KycStatus, 'not_submitted'>
+  dateOfBirth: string
+  address: string
+  city: string
+  state: string
+  lga: string
+  photoUrl: string
+  motorType: string
+  motorRegistrationNumber: string
+  motorPhotoUrl: string
+  verification?: AdminUserKyc['verification']
+  rejectReason?: string
+  submittedAt: string
+  reviewedAt?: string
+}
+
+export type AdminVirtualAccount = {
+  accountNumber: string
+  bankName: string
+  accountName: string
+  reference: string
+  status: string
+  provider: string
+  createdAt: string
+}
+
+export type AdminKycSubmitResult = {
+  kycId: string
+  status: Exclude<KycStatus, 'not_submitted'>
+}
+
+export type AdminKycSubmitInput = {
+  bvn: string
+  nin: string
+  dateOfBirth: string
+  address: string
+  city: string
+  state: string
+  lga: string
+  motorType: 'bike' | 'car' | 'keke'
+  motorRegistrationNumber: string
+  photo: File
+  motorPhoto: File
 }
 
 export type AdminUserOutstanding =

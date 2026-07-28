@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '../api/admin'
+import { getApiErrorMessage } from '../api/client'
 import {
   Button,
   Card,
@@ -9,14 +10,16 @@ import {
   FormField,
   Input,
   KpiCard,
+  Modal,
   PageHeader,
   Select,
   Spinner,
   StatusBadge,
   Textarea,
 } from '../components/ui'
+import { useToast } from '../components/ui/Toast'
 import { cn, formatCurrency, formatDate, formatDateTime, formatNumber } from '../lib/utils'
-import type { SupportTopic } from '../types/api'
+import type { AdminKycSubmitInput, SupportTopic } from '../types/api'
 
 const MESSAGE_TOPICS: { value: SupportTopic; label: string }[] = [
   { value: 'credit_issue', label: 'Credit issue' },
@@ -25,6 +28,23 @@ const MESSAGE_TOPICS: { value: SupportTopic; label: string }[] = [
   { value: 'repayment', label: 'Repayment' },
   { value: 'other', label: 'Other' },
 ]
+
+const emptyKycForm: Omit<AdminKycSubmitInput, 'photo' | 'motorPhoto'> & {
+  photo: File | null
+  motorPhoto: File | null
+} = {
+  bvn: '',
+  nin: '',
+  dateOfBirth: '',
+  address: '',
+  city: '',
+  state: '',
+  lga: '',
+  motorType: 'bike',
+  motorRegistrationNumber: '',
+  photo: null,
+  motorPhoto: null,
+}
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -38,6 +58,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 export function UserDetailPage() {
   const { userId = '' } = useParams()
   const qc = useQueryClient()
+  const toast = useToast()
   const [loansPage, setLoansPage] = useState(1)
   const [txPage, setTxPage] = useState(1)
   const [repayPage, setRepayPage] = useState(1)
@@ -46,6 +67,15 @@ export function UserDetailPage() {
   const [messageBody, setMessageBody] = useState('')
   const [messageError, setMessageError] = useState('')
   const [messageSuccess, setMessageSuccess] = useState('')
+  const [rejectOpen, setRejectOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [submitKycOpen, setSubmitKycOpen] = useState(false)
+  const [kycForm, setKycForm] = useState(emptyKycForm)
+
+  const invalidateOverview = () => {
+    qc.invalidateQueries({ queryKey: ['admin', 'users', userId, 'overview'] })
+    qc.invalidateQueries({ queryKey: ['admin', 'kyc'] })
+  }
 
   const { data: overview, isLoading, error } = useQuery({
     queryKey: ['admin', 'users', userId, 'overview'],
@@ -91,6 +121,69 @@ export function UserDetailPage() {
     },
   })
 
+  const approveKycMutation = useMutation({
+    mutationFn: (kycId: string) => adminApi.approveKyc(kycId),
+    onSuccess: () => {
+      toast.success('KYC approved')
+      invalidateOverview()
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err, 'Failed to approve KYC')),
+  })
+
+  const rejectKycMutation = useMutation({
+    mutationFn: ({ kycId, reason }: { kycId: string; reason: string }) =>
+      adminApi.rejectKyc(kycId, reason),
+    onSuccess: () => {
+      toast.success('KYC rejected')
+      setRejectOpen(false)
+      setRejectReason('')
+      invalidateOverview()
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err, 'Failed to reject KYC')),
+  })
+
+  const reverifyKycMutation = useMutation({
+    mutationFn: (kycId: string) => adminApi.reverifyKyc(kycId),
+    onSuccess: () => {
+      toast.success('KYC reverification completed')
+      invalidateOverview()
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err, 'Failed to reverify KYC')),
+  })
+
+  const provisionWalletMutation = useMutation({
+    mutationFn: () => adminApi.provisionUserWallet(userId),
+    onSuccess: () => {
+      toast.success('Repayment account created')
+      invalidateOverview()
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err, 'Failed to create wallet')),
+  })
+
+  const submitKycMutation = useMutation({
+    mutationFn: () => {
+      if (!kycForm.photo || !kycForm.motorPhoto) {
+        throw new Error('Selfie and vehicle photo are required')
+      }
+      return adminApi.submitKycForUser(userId, {
+        ...kycForm,
+        photo: kycForm.photo,
+        motorPhoto: kycForm.motorPhoto,
+      })
+    },
+    onSuccess: (result) => {
+      toast.success(
+        result.status === 'approved'
+          ? 'KYC submitted and approved'
+          : 'KYC submitted — awaiting review',
+      )
+      setSubmitKycOpen(false)
+      setKycForm(emptyKycForm)
+      invalidateOverview()
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err, 'Failed to submit KYC')),
+  })
+
   if (isLoading) return <Spinner />
   if (error || !overview) {
     return (
@@ -105,6 +198,10 @@ export function UserDetailPage() {
 
   const { profile, kyc, tier, fuelBalance, wallet, outstanding, activeLoan, nextPayment, creditRating, stats } =
     overview
+
+  const canReviewKyc = kyc?.kycId && (kyc.status === 'pending' || kyc.status === 'rejected')
+  const hasVirtualAccount = Boolean(wallet?.virtualAccount)
+  const canProvisionWallet = profile.isKycVerified && !hasVirtualAccount
 
   return (
     <div>
@@ -224,9 +321,48 @@ export function UserDetailPage() {
         </Card>
 
         <Card className="p-5 lg:col-span-2">
-          <h2 className="mb-4 text-lg font-semibold text-(--text-primary)">KYC</h2>
-          {!kyc ? (
-            <p className="text-sm text-(--text-muted)">KYC not submitted.</p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-(--text-primary)">KYC</h2>
+            <div className="flex flex-wrap gap-2">
+              {(!kyc || kyc.status === 'not_submitted' || kyc.status === 'rejected') && (
+                <Button size="sm" variant="secondary" onClick={() => setSubmitKycOpen(true)}>
+                  {kyc?.status === 'rejected' ? 'Resubmit KYC' : 'Submit KYC'}
+                </Button>
+              )}
+              {canReviewKyc && (                <>
+                  <Button
+                    size="sm"
+                    onClick={() => approveKycMutation.mutate(kyc.kycId!)}
+                    disabled={approveKycMutation.isPending}
+                  >
+                    {approveKycMutation.isPending ? 'Approving…' : 'Approve'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setRejectOpen(true)}
+                    disabled={rejectKycMutation.isPending}
+                  >
+                    Reject
+                  </Button>
+                </>
+              )}
+              {kyc?.kycId && kyc.status !== 'not_submitted' && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => reverifyKycMutation.mutate(kyc.kycId!)}
+                  disabled={reverifyKycMutation.isPending}
+                >
+                  {reverifyKycMutation.isPending ? 'Reverifying…' : 'Reverify identity'}
+                </Button>
+              )}
+            </div>
+          </div>
+          {!kyc || kyc.status === 'not_submitted' ? (
+            <p className="text-sm text-(--text-muted)">
+              KYC not submitted. Use Submit KYC to upload documents on behalf of this user.
+            </p>
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
@@ -276,9 +412,27 @@ export function UserDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-4 text-lg font-semibold text-(--text-primary)">Repayment account</h2>
-          {!wallet ? (
-            <p className="text-sm text-(--text-muted)">No virtual account provisioned.</p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-(--text-primary)">Repayment account</h2>
+            {canProvisionWallet && (
+              <Button
+                size="sm"
+                onClick={() => provisionWalletMutation.mutate()}
+                disabled={provisionWalletMutation.isPending}
+              >
+                {provisionWalletMutation.isPending ? 'Creating…' : 'Generate wallet'}
+              </Button>
+            )}
+          </div>
+          {!wallet || !wallet.virtualAccount ? (
+            <div>
+              <p className="text-sm text-(--text-muted)">No virtual account provisioned.</p>
+              {!profile.isKycVerified && (
+                <p className="mt-2 text-xs text-(--text-muted)">
+                  Approve KYC before generating a repayment account.
+                </p>
+              )}
+            </div>
           ) : (
             <>
               <DetailRow label="Bank" value={wallet.virtualAccount.bankName} />
@@ -429,6 +583,161 @@ export function UserDetailPage() {
           onPageChange={setRepayPage}
         />
       </div>
+
+      <Modal
+        open={rejectOpen}
+        onClose={() => {
+          setRejectOpen(false)
+          setRejectReason('')
+        }}
+        title="Reject KYC"
+      >
+        <FormField label="Reason">
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+            placeholder="Why is this KYC being rejected?"
+          />
+        </FormField>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setRejectOpen(false)
+              setRejectReason('')
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            disabled={rejectReason.trim().length < 3 || rejectKycMutation.isPending || !kyc?.kycId}
+            onClick={() =>
+              rejectKycMutation.mutate({ kycId: kyc!.kycId!, reason: rejectReason.trim() })
+            }
+          >
+            {rejectKycMutation.isPending ? 'Rejecting…' : 'Reject'}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={submitKycOpen}
+        onClose={() => setSubmitKycOpen(false)}
+        title="Submit KYC for user"
+        wide
+      >
+        <p className="mb-4 text-sm text-(--text-secondary)">
+          Upload identity and vehicle details on behalf of this customer. Dojah verification still
+          runs when configured.
+        </p>
+        <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
+          <FormField label="BVN">
+            <Input
+              value={kycForm.bvn}
+              onChange={(e) => setKycForm((f) => ({ ...f, bvn: e.target.value }))}
+              placeholder="11-digit BVN"
+            />
+          </FormField>
+          <FormField label="NIN">
+            <Input
+              value={kycForm.nin}
+              onChange={(e) => setKycForm((f) => ({ ...f, nin: e.target.value }))}
+              placeholder="11-digit NIN"
+            />
+          </FormField>
+          <FormField label="Date of birth">
+            <Input
+              type="date"
+              value={kycForm.dateOfBirth}
+              onChange={(e) => setKycForm((f) => ({ ...f, dateOfBirth: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Motor type">
+            <Select
+              value={kycForm.motorType}
+              onChange={(e) =>
+                setKycForm((f) => ({
+                  ...f,
+                  motorType: e.target.value as AdminKycSubmitInput['motorType'],
+                }))
+              }
+            >
+              <option value="bike">Bike</option>
+              <option value="car">Car</option>
+              <option value="keke">Keke</option>
+            </Select>
+          </FormField>
+          <FormField label="Address">
+            <Input
+              value={kycForm.address}
+              onChange={(e) => setKycForm((f) => ({ ...f, address: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Registration number">
+            <Input
+              value={kycForm.motorRegistrationNumber}
+              onChange={(e) =>
+                setKycForm((f) => ({ ...f, motorRegistrationNumber: e.target.value }))
+              }
+            />
+          </FormField>
+          <FormField label="City">
+            <Input
+              value={kycForm.city}
+              onChange={(e) => setKycForm((f) => ({ ...f, city: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="LGA">
+            <Input
+              value={kycForm.lga}
+              onChange={(e) => setKycForm((f) => ({ ...f, lga: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="State">
+            <Input
+              value={kycForm.state}
+              onChange={(e) => setKycForm((f) => ({ ...f, state: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Selfie photo">
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setKycForm((f) => ({ ...f, photo: e.target.files?.[0] ?? null }))
+              }
+            />
+          </FormField>
+          <FormField label="Vehicle photo">
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setKycForm((f) => ({ ...f, motorPhoto: e.target.files?.[0] ?? null }))
+              }
+            />
+          </FormField>
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setSubmitKycOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            disabled={
+              submitKycMutation.isPending ||
+              !kycForm.bvn ||
+              !kycForm.nin ||
+              !kycForm.dateOfBirth ||
+              !kycForm.photo ||
+              !kycForm.motorPhoto
+            }
+            onClick={() => submitKycMutation.mutate()}
+          >
+            {submitKycMutation.isPending ? 'Submitting…' : 'Submit KYC'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }
