@@ -15,6 +15,13 @@ export function formatNumber(n: number, decimals = 2): string {
   }).format(n)
 }
 
+export function formatLitres(litres: number | null | undefined): string {
+  if (litres == null || Number.isNaN(Number(litres))) return '—'
+  const value = Number(litres)
+  const decimals = value === Math.round(value) ? 0 : 1
+  return `${formatNumber(value, decimals)} L`
+}
+
 export function formatDate(iso?: string): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('en-NG', {

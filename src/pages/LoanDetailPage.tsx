@@ -12,7 +12,6 @@ import {
   Select,
   Spinner,
   StatusBadge,
-  Textarea,
   ErrorMessage,
 } from '../components/ui'
 import { formatCurrency, formatDate, formatDateTime, formatNumber } from '../lib/utils'
@@ -29,8 +28,6 @@ function DetailRow({ label, value }: { label: string; value: ReactNode }) {
 export function LoanDetailPage() {
   const { loanId = '' } = useParams()
   const qc = useQueryClient()
-  const [rejectOpen, setRejectOpen] = useState(false)
-  const [rejectReason, setRejectReason] = useState('')
   const [closeOpen, setCloseOpen] = useState(false)
   const [closeNote, setCloseNote] = useState('')
   const [closeResolution, setCloseResolution] = useState<'repaid' | 'defaulted'>('repaid')
@@ -55,29 +52,12 @@ export function LoanDetailPage() {
     void qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
   }
 
-  const approveMutation = useMutation({
-    mutationFn: () => adminApi.approveLoan(loanId),
-    onSuccess: () => {
-      invalidate()
-      setBanner('Loan approved — fuel credit disbursed')
-    },
-  })
-
-  const rejectMutation = useMutation({
-    mutationFn: () => adminApi.rejectLoan(loanId, rejectReason.trim() || 'Rejected by admin'),
-    onSuccess: () => {
-      invalidate()
-      setRejectOpen(false)
-      setBanner('Loan rejected')
-    },
-  })
-
   const closeMutation = useMutation({
     mutationFn: () => adminApi.closeLoan(loanId, closeResolution, closeNote),
     onSuccess: () => {
       invalidate()
       setCloseOpen(false)
-      setBanner('Loan closed')
+      setBanner('Purchase closed')
     },
   })
 
@@ -98,19 +78,18 @@ export function LoanDetailPage() {
 
   if (isLoading) return <Spinner />
   if (error || !loan) {
-    return <ErrorMessage message="Unable to load loan" />
+    return <ErrorMessage message="Unable to load purchase" />
   }
 
   const { breakdown, customer } = loan
   const history = [...(loan.statusHistory ?? [])].reverse()
   const canOperate = ['active', 'partially_repaid', 'defaulted'].includes(loan.status)
-  const isPending = loan.status === 'pending'
 
   return (
     <div>
       <PageHeader
         title={`${customer.firstName} ${customer.lastName}`}
-        description={`Loan ${loan.id} · ${formatCurrency(loan.principalAmount)} facility`}
+        description={`Purchase ${loan.id} · ${formatCurrency(breakdown.amountToPay)} to repay`}
         actions={
           <>
             <Link to="/loans/manage">
@@ -137,51 +116,32 @@ export function LoanDetailPage() {
       )}
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {isPending && (
-          <>
-            <Button
-              onClick={() => approveMutation.mutate()}
-              disabled={approveMutation.isPending}
-            >
-              {approveMutation.isPending ? 'Disbursing…' : 'Approve & disburse'}
-            </Button>
-            <Button variant="danger" onClick={() => setRejectOpen(true)}>
-              Reject
-            </Button>
-          </>
-        )}
         {canOperate && (
           <>
             <Button
               onClick={() => repayMutation.mutate()}
               disabled={repayMutation.isPending || loan.outstandingBalance <= 0}
             >
-              {repayMutation.isPending ? 'Sweeping…' : 'Trigger wallet repayment'}
+              {repayMutation.isPending ? 'Repaying…' : 'Trigger wallet repayment'}
             </Button>
             <Button
               variant="secondary"
               onClick={() => reminderMutation.mutate()}
-              disabled={reminderMutation.isPending || loan.outstandingBalance <= 0}
+              disabled={reminderMutation.isPending}
             >
-              {reminderMutation.isPending ? 'Sending…' : 'Send repayment reminder'}
+              {reminderMutation.isPending ? 'Sending…' : 'Send reminder'}
             </Button>
             <Button variant="danger" onClick={() => setCloseOpen(true)}>
-              Close loan
+              Close purchase
             </Button>
           </>
         )}
       </div>
 
-      {(approveMutation.error ||
-        rejectMutation.error ||
-        closeMutation.error ||
-        repayMutation.error ||
-        reminderMutation.error) && (
+      {(closeMutation.error || repayMutation.error || reminderMutation.error) && (
         <div className="mb-4">
           <ErrorMessage
             message={
-              (approveMutation.error as Error)?.message ||
-              (rejectMutation.error as Error)?.message ||
               (closeMutation.error as Error)?.message ||
               (repayMutation.error as Error)?.message ||
               (reminderMutation.error as Error)?.message ||
@@ -347,30 +307,7 @@ export function LoanDetailPage() {
         )}
       </Card>
 
-      <Modal open={rejectOpen} onClose={() => setRejectOpen(false)} title="Reject loan">
-        <FormField label="Reason">
-          <Textarea
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            rows={3}
-            placeholder="Rejection reason"
-          />
-        </FormField>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setRejectOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => rejectMutation.mutate()}
-            disabled={rejectMutation.isPending}
-          >
-            Reject
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal open={closeOpen} onClose={() => setCloseOpen(false)} title="Close loan">
+      <Modal open={closeOpen} onClose={() => setCloseOpen(false)} title="Close purchase">
         <FormField label="Resolution">
           <Select
             value={closeResolution}

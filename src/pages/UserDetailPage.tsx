@@ -22,8 +22,8 @@ import { cn, formatCurrency, formatDate, formatDateTime, formatNumber } from '..
 import type { AdminKycSubmitInput, SupportTopic } from '../types/api'
 
 const MESSAGE_TOPICS: { value: SupportTopic; label: string }[] = [
-  { value: 'credit_issue', label: 'Credit issue' },
-  { value: 'loan_issue', label: 'Loan issue' },
+  { value: 'credit_issue', label: 'Account / limit issue' },
+  { value: 'loan_issue', label: 'Purchase / outstanding issue' },
   { value: 'fuel_disbursement', label: 'Fuel disbursement' },
   { value: 'repayment', label: 'Repayment' },
   { value: 'other', label: 'Other' },
@@ -59,7 +59,6 @@ export function UserDetailPage() {
   const { userId = '' } = useParams()
   const qc = useQueryClient()
   const toast = useToast()
-  const [loansPage, setLoansPage] = useState(1)
   const [txPage, setTxPage] = useState(1)
   const [repayPage, setRepayPage] = useState(1)
   const [messageTopic, setMessageTopic] = useState<SupportTopic>('other')
@@ -80,12 +79,6 @@ export function UserDetailPage() {
   const { data: overview, isLoading, error } = useQuery({
     queryKey: ['admin', 'users', userId, 'overview'],
     queryFn: () => adminApi.getUserOverview(userId),
-    enabled: !!userId,
-  })
-
-  const { data: loans } = useQuery({
-    queryKey: ['admin', 'users', userId, 'loans', loansPage],
-    queryFn: () => adminApi.getUserLoans(userId, loansPage, 5),
     enabled: !!userId,
   })
 
@@ -196,9 +189,12 @@ export function UserDetailPage() {
     )
   }
 
-  const { profile, kyc, tier, fuelBalance, wallet, outstanding, activeLoan, nextPayment, creditRating, stats } =
+  const { profile, kyc, tier, fuelBalance, wallet, outstanding, nextPayment, creditRating, stats } =
     overview
 
+  const hasOutstanding = outstanding.hasActiveLoan
+  const outstandingBalance = hasOutstanding ? outstanding.outstandingBalance : 0
+  const outstandingDueDate = hasOutstanding ? outstanding.dueDate : undefined
   const canReviewKyc = kyc?.kycId && (kyc.status === 'pending' || kyc.status === 'rejected')
   const hasVirtualAccount = Boolean(wallet?.virtualAccount)
   const canProvisionWallet = profile.isKycVerified && !hasVirtualAccount
@@ -227,7 +223,7 @@ export function UserDetailPage() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          label="Credit limit"
+          label="Fuel limit"
           value={formatCurrency(tier?.creditLimit ?? creditRating?.creditLimit ?? 0)}
           sub={tier ? `${tier.currentTier.name} (${tier.currentTier.code})` : 'No tier assigned'}
           accent="blue"
@@ -240,17 +236,13 @@ export function UserDetailPage() {
         />
         <KpiCard
           label="Outstanding"
-          value={
-            outstanding.hasActiveLoan
-              ? formatCurrency(outstanding.outstandingBalance)
-              : '—'
-          }
+          value={hasOutstanding ? formatCurrency(outstandingBalance) : '—'}
           sub={
-            outstanding.hasActiveLoan
-              ? `Due ${formatDate(outstanding.dueDate)}`
-              : 'No active loan'
+            hasOutstanding && outstandingDueDate
+              ? `Due ${formatDate(outstandingDueDate)}`
+              : 'Nothing outstanding'
           }
-          accent={outstanding.hasActiveLoan ? 'amber' : undefined}
+          accent={hasOutstanding ? 'amber' : undefined}
         />
         <KpiCard
           label="Next payment"
@@ -266,11 +258,11 @@ export function UserDetailPage() {
           <DetailRow label="Phone" value={profile.phone} />
           <DetailRow label="Email verified" value={profile.isEmailVerified ? 'Yes' : 'No'} />
           <DetailRow label="Joined" value={formatDate(profile.createdAt)} />
-          <DetailRow
-            label="Loans"
-            value={`${stats.repaidLoans} repaid / ${stats.totalLoans} total`}
-          />
           <DetailRow label="Fuel purchases" value={String(stats.completedFuelPurchases)} />
+          <DetailRow
+            label="Cleared balances"
+            value={`${stats.repaidLoans} of ${stats.totalLoans}`}
+          />
           {tier && (
             <DetailRow
               label="Payment card"
@@ -280,7 +272,7 @@ export function UserDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-4 text-lg font-semibold text-(--text-primary)">Credit rating</h2>
+          <h2 className="mb-4 text-lg font-semibold text-(--text-primary)">Account eligibility</h2>
           {creditRating ? (
             <>
               <DetailRow
@@ -288,7 +280,7 @@ export function UserDetailPage() {
                 value={<StatusBadge status={creditRating.decision} />}
               />
               <DetailRow
-                label="Approved principal"
+                label="Approved limit"
                 value={formatCurrency(creditRating.approvedPrincipal)}
               />
               <DetailRow
@@ -316,7 +308,7 @@ export function UserDetailPage() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-(--text-muted)">No credit evaluation on record.</p>
+            <p className="text-sm text-(--text-muted)">No eligibility evaluation on record.</p>
           )}
         </Card>
 
@@ -510,47 +502,7 @@ export function UserDetailPage() {
         </Card>
       </div>
 
-      {activeLoan && (
-        <Card className="mb-6 p-5">
-          <h2 className="mb-4 text-lg font-semibold text-(--text-primary)">Active loan</h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div>
-              <p className="text-xs text-(--text-muted)">Principal</p>
-              <p className="font-medium">{formatCurrency(activeLoan.principalAmount)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-(--text-muted)">Outstanding</p>
-              <p className="font-medium">{formatCurrency(activeLoan.outstandingBalance)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-(--text-muted)">Repaid</p>
-              <p className="font-medium">{formatCurrency(activeLoan.amountRepaid)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-(--text-muted)">Due date</p>
-              <p className="font-medium">{formatDate(activeLoan.dueDate)}</p>
-            </div>
-          </div>
-        </Card>
-      )}
-
       <div className="space-y-6">
-        <SectionTable
-          title="Loan history"
-          empty="No loans"
-          headers={['Amount', 'Status', 'Outstanding', 'Due', 'Created']}
-          rows={(loans?.items ?? []).map((loan) => [
-            formatCurrency(loan.principalAmount),
-            <StatusBadge key={loan.id} status={loan.status} />,
-            formatCurrency(loan.outstandingBalance),
-            formatDate(loan.dueDate),
-            formatDate(loan.createdAt),
-          ])}
-          page={loansPage}
-          totalPages={loans?.pagination.totalPages ?? 1}
-          onPageChange={setLoansPage}
-        />
-
         <SectionTable
           title="Fuel purchase history"
           empty="No fuel purchases"
@@ -568,13 +520,13 @@ export function UserDetailPage() {
         />
 
         <SectionTable
-          title="Repayment breakdown"
+          title="Repayment history"
           empty="No repayments"
-          headers={['Amount', 'Principal', 'Interest', 'Source', 'Date']}
+          headers={['Amount', 'Fuel', 'Service charge', 'Source', 'Date']}
           rows={(repayments?.items ?? []).map((r) => [
             formatCurrency(r.amount),
             formatCurrency(r.principalPortion),
-            formatCurrency(r.interestPortion),
+            formatCurrency(r.serviceChargePortion ?? r.interestPortion),
             r.source.replace(/_/g, ' '),
             formatDateTime(r.createdAt),
           ])}

@@ -3,11 +3,10 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
 import { adminApi } from '../api/admin'
-import { LoanBreakdownCell } from '../components/LoanBreakdownCell'
 import { DataTable } from '../components/data-table/DataTable'
 import { Button, Input, KpiCard, PageHeader, Select, StatusBadge } from '../components/ui'
-import { downloadCsv, formatCurrency, formatDateTime, formatNumber } from '../lib/utils'
-import type { AdminSaleRow } from '../types/api'
+import { downloadCsv, formatCurrency, formatDateTime, formatLitres, formatNumber } from '../lib/utils'
+import type { AdminSaleRow, SalesQuery } from '../types/api'
 
 function toIsoStart(date: string): string | undefined {
   if (!date) return undefined
@@ -19,15 +18,22 @@ function toIsoEnd(date: string): string | undefined {
   return new Date(`${date}T23:59:59.999`).toISOString()
 }
 
+function purchaseTypeLabel(type: string): string {
+  if (type === 'qr') return 'QR'
+  if (type === 'purchase_id') return 'Purchase ID'
+  return type || '—'
+}
+
+type SalesSortBy = NonNullable<SalesQuery['sortBy']>
+
 export function TransactionsPage() {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(20)
   const [merchantCode, setMerchantCode] = useState('')
-  const [status, setStatus] = useState('')
-  const [settlementStatus, setSettlementStatus] = useState('')
+  const [status, setStatus] = useState<string>('completed')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
-  const [sortBy, setSortBy] = useState<'createdAt' | 'amount' | 'completedAt'>('createdAt')
+  const [sortBy, setSortBy] = useState<SalesSortBy>('completedAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   const fromIso = toIsoStart(fromDate)
@@ -38,11 +44,6 @@ export function TransactionsPage() {
     queryFn: adminApi.dashboard,
   })
 
-  const { data: volume } = useQuery({
-    queryKey: ['admin', 'transaction-volume', fromIso, toIso],
-    queryFn: () => adminApi.transactionVolume(fromIso, toIso),
-  })
-
   const { data, isLoading, refetch } = useQuery({
     queryKey: [
       'admin',
@@ -51,7 +52,6 @@ export function TransactionsPage() {
       limit,
       merchantCode,
       status,
-      settlementStatus,
       fromIso,
       toIso,
       sortBy,
@@ -63,13 +63,14 @@ export function TransactionsPage() {
         limit,
         merchantCode: merchantCode || undefined,
         status: (status || undefined) as AdminSaleRow['status'],
-        settlementStatus: (settlementStatus || undefined) as 'unsettled' | 'settled',
         fromDate: fromIso,
         toDate: toIso,
         sortBy,
         sortOrder,
       }),
   })
+
+  const summary = data?.summary
 
   const columns = useMemo<ColumnDef<AdminSaleRow>[]>(
     () => [
@@ -83,7 +84,7 @@ export function TransactionsPage() {
         header: 'Customer',
         cell: ({ row }) => {
           const customer = row.original.customerSnapshot
-          if (!customer) return <span className="text-(--text-muted)">—</span>
+          if (!customer) return <span className="text-(--text-muted)">Walk-in / pending</span>
           return (
             <div>
               <p className="font-medium">
@@ -95,61 +96,68 @@ export function TransactionsPage() {
         },
       },
       {
-        accessorKey: 'merchantCode',
-        header: 'Merchant',
+        id: 'merchant',
+        header: 'Station',
         cell: ({ row }) => (
           <div>
-            <p className="font-medium">{row.original.merchantCode ?? '—'}</p>
-            <p className="text-xs text-(--text-muted)">{row.original.businessName}</p>
+            <p className="font-medium">{row.original.businessName ?? '—'}</p>
+            <p className="text-xs text-(--text-muted)">{row.original.merchantCode}</p>
           </div>
         ),
       },
       {
-        id: 'purchase',
-        header: 'This purchase',
-        cell: ({ row }) => {
-          const purchase = row.original.transactionBreakdown
-          return (
-            <div className="min-w-36 space-y-0.5 text-xs">
-              <div className="flex justify-between gap-3">
-                <span className="text-(--text-muted)">Litres</span>
-                <span>{formatNumber(purchase.litresConsumed, 2)} L</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-(--text-muted)">Fuel cost</span>
-                <span>{formatCurrency(purchase.fuelCost)}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-(--text-muted)">Interest</span>
-                <span>{formatCurrency(purchase.interestAdded)}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-(--text-muted)">Total</span>
-                <span className="font-medium">{formatCurrency(purchase.purchaseTotal)}</span>
-              </div>
-            </div>
-          )
-        },
+        accessorKey: 'fuelLitres',
+        header: 'Litres',
+        cell: ({ row }) => (
+          <span className="font-semibold tabular-nums">{formatLitres(row.original.fuelLitres)}</span>
+        ),
       },
       {
         accessorKey: 'pricePerLitre',
-        header: 'Price/L',
+        header: '₦/L',
         cell: ({ getValue }) => formatCurrency(getValue<number>()),
       },
       {
-        id: 'loan',
-        header: 'Loan snapshot',
-        cell: ({ row }) =>
-          row.original.loanBreakdown ? (
-            <LoanBreakdownCell breakdown={row.original.loanBreakdown} />
-          ) : (
-            <span className="text-xs text-(--text-muted)">No linked loan</span>
-          ),
+        accessorKey: 'amount',
+        header: 'Fuel ₦',
+        cell: ({ row }) => formatCurrency(row.original.amount),
+      },
+      {
+        accessorKey: 'serviceCharge',
+        header: 'Service ₦',
+        cell: ({ row }) => formatCurrency(row.original.serviceCharge),
+      },
+      {
+        accessorKey: 'purchaseTotal',
+        header: 'Total ₦',
+        cell: ({ row }) => (
+          <span className="font-medium">{formatCurrency(row.original.purchaseTotal)}</span>
+        ),
+      },
+      {
+        accessorKey: 'purchaseType',
+        header: 'Type',
+        cell: ({ row }) => purchaseTypeLabel(row.original.purchaseType),
       },
       {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+        cell: ({ row }) => {
+          const label = row.original.status === 'completed' ? 'success' : row.original.status
+          return (
+            <div>
+              <StatusBadge status={label} />
+              {row.original.declineReason && (
+                <p
+                  className="mt-1 max-w-40 truncate text-[10px] text-(--text-muted)"
+                  title={row.original.declineReason}
+                >
+                  {row.original.declineReason}
+                </p>
+              )}
+            </div>
+          )
+        },
       },
     ],
     [],
@@ -158,38 +166,32 @@ export function TransactionsPage() {
   const handleExport = () => {
     if (!data?.items.length) return
     downloadCsv(
-      'fuel-sales.csv',
+      'merchant-fuel-sales.csv',
       [
         'Date',
         'Customer',
-        'Merchant',
+        'Station',
+        'Merchant code',
         'Litres',
-        'Fuel Cost',
-        'Interest',
-        'Purchase Total',
-        'Credit Limit',
-        'Disbursed',
-        'Spent',
-        'Unspent',
-        'Loan To Pay',
-        'Loan Litres',
+        'Price per litre',
+        'Fuel amount',
+        'Service charge',
+        'Purchase total',
+        'Type',
         'Status',
       ],
       data.items.map((r) => [
         formatDateTime(r.completedAt ?? r.createdAt),
         r.customerSnapshot ? `${r.customerSnapshot.firstName} ${r.customerSnapshot.lastName}` : '',
+        r.businessName ?? '',
         r.merchantCode ?? '',
-        String(r.transactionBreakdown.litresConsumed),
-        String(r.transactionBreakdown.fuelCost),
-        String(r.transactionBreakdown.interestAdded),
-        String(r.transactionBreakdown.purchaseTotal),
-        r.loanBreakdown ? String(r.loanBreakdown.creditLimit) : '',
-        r.loanBreakdown ? String(r.loanBreakdown.amountDisbursed) : '',
-        r.loanBreakdown ? String(r.loanBreakdown.amountSpent) : '',
-        r.loanBreakdown ? String(r.loanBreakdown.amountUnspent) : '',
-        r.loanBreakdown ? String(r.loanBreakdown.amountToPay) : '',
-        r.loanBreakdown ? String(r.loanBreakdown.litresConsumed) : '',
-        r.status ?? 'unknown',
+        formatNumber(r.fuelLitres, 2),
+        String(r.pricePerLitre),
+        String(r.amount),
+        String(r.serviceCharge),
+        String(r.purchaseTotal),
+        purchaseTypeLabel(r.purchaseType),
+        r.status === 'completed' ? 'success' : r.status,
       ]),
     )
   }
@@ -197,8 +199,8 @@ export function TransactionsPage() {
   return (
     <div>
       <PageHeader
-        title="Transactions"
-        description="All fuel purchases — filter by date range, merchant, and status"
+        title="Merchant fuel sales"
+        description="Filter by station, status, and sale date. KPIs match the same filters — service revenue is your platform take."
         actions={
           <>
             <Button variant="secondary" onClick={() => refetch()}>
@@ -213,28 +215,28 @@ export function TransactionsPage() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          label="Total transactions"
-          value={String(dashboard?.transactions.total ?? data?.pagination.total ?? '—')}
-          sub={`${dashboard?.transactions.completed ?? 0} completed · ${dashboard?.transactions.pending ?? 0} pending`}
-          accent="blue"
-        />
-        <KpiCard
-          label="Filtered rows"
-          value={String(data?.pagination.total ?? '—')}
-          sub="Matching current filters"
+          label="Litres sold"
+          value={formatLitres(summary?.totalLitres ?? 0)}
+          sub={`${summary?.salesCount ?? 0} sales in current filters`}
           accent="green"
         />
         <KpiCard
-          label="Filtered volume"
-          value={formatCurrency(volume?.totalVolume ?? 0)}
-          sub={`${volume?.totalCount ?? 0} completed in range`}
+          label="Fuel amount"
+          value={formatCurrency(summary?.totalFuelAmount ?? 0)}
+          sub="Sum of fuel cost (filters)"
           accent="amber"
         />
         <KpiCard
-          label="Today"
-          value={formatCurrency(dashboard?.sales.todayVolume ?? 0)}
-          sub={`${dashboard?.sales.todayCount ?? 0} sales today`}
+          label="Service revenue"
+          value={formatCurrency(summary?.totalServiceCharge ?? 0)}
+          sub="Platform take — same filters"
           accent="red"
+        />
+        <KpiCard
+          label="Today (all stations)"
+          value={formatLitres(dashboard?.sales.todayLitres ?? 0)}
+          sub={`${formatCurrency(dashboard?.sales.todayVolume ?? 0)} · ${dashboard?.sales.todayCount ?? 0} sales`}
+          accent="blue"
         />
       </div>
 
@@ -258,6 +260,7 @@ export function TransactionsPage() {
                 setPage(1)
               }}
               className="w-40"
+              title="From date (completed sales use completion date)"
             />
             <Input
               type="date"
@@ -267,9 +270,10 @@ export function TransactionsPage() {
                 setPage(1)
               }}
               className="w-40"
+              title="To date (completed sales use completion date)"
             />
             <Input
-              placeholder="Merchant code (MCH...)"
+              placeholder="Station code (MCH...)"
               value={merchantCode}
               onChange={(e) => {
                 setMerchantCode(e.target.value)
@@ -285,27 +289,16 @@ export function TransactionsPage() {
               }}
             >
               <option value="">All statuses</option>
-              <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="awaiting_confirmation">Awaiting</option>
-              <option value="declined">Declined</option>
+              <option value="completed">Success</option>
               <option value="failed">Failed</option>
+              <option value="declined">Declined</option>
             </Select>
-            <Select
-              value={settlementStatus}
-              onChange={(e) => {
-                setSettlementStatus(e.target.value)
-                setPage(1)
-              }}
-            >
-              <option value="">All settlements</option>
-              <option value="unsettled">Unsettled</option>
-              <option value="settled">Settled</option>
-            </Select>
-            <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
-              <option value="createdAt">Sort: Date</option>
-              <option value="amount">Sort: Amount</option>
+            <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SalesSortBy)}>
               <option value="completedAt">Sort: Completed</option>
+              <option value="createdAt">Sort: Created</option>
+              <option value="serviceCharge">Sort: Service revenue</option>
+              <option value="amount">Sort: Fuel amount</option>
+              <option value="fuelLitres">Sort: Litres</option>
             </Select>
             <Select
               value={sortOrder}

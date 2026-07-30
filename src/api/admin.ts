@@ -7,12 +7,14 @@ import type {
   AdminFinanceOverview,
   RepaymentRateReport,
   TransactionVolumeReport,
+  CompanyRevenueReport,
   AdminUserSummary,
   AdminUserOverview,
   AdminRepaymentRow,
   AdminUserTransaction,
   SupportTopic,
   AdminSaleRow,
+  AdminSalesListResult,
   AdminLoanListItem,
   AdminOverdueLoanItem,
   AdminMerchantSummary,
@@ -35,6 +37,9 @@ import type {
   SupportTicketDetail,
   SupportTicketStatus,
   AdminLoanConfig,
+  AdminVehicleFuelCapsConfig,
+  AdminReferralConfig,
+  VehicleType,
   ReconciliationMerchantRow,
   ReconciliationSnapshotRow,
   SnapshotTransactionsResult,
@@ -76,11 +81,18 @@ export const adminApi = {
       ...(toDate ? { toDate } : {}),
     }),
 
+  revenue: (query?: { fromDate?: string; toDate?: string; merchantCode?: string }) =>
+    apiGet<CompanyRevenueReport>('/admin/reports/revenue', {
+      ...(query?.fromDate ? { fromDate: query.fromDate } : {}),
+      ...(query?.toDate ? { toDate: query.toDate } : {}),
+      ...(query?.merchantCode ? { merchantCode: query.merchantCode } : {}),
+    }),
+
   sales: (query: SalesQuery) =>
-    apiGet<PaginatedResult<AdminSaleRow>>('/admin/sales', query as Record<string, unknown>),
+    apiGet<AdminSalesListResult>('/admin/sales', query as Record<string, unknown>),
 
   transactions: (query: SalesQuery) =>
-    apiGet<PaginatedResult<AdminSaleRow>>('/admin/transactions', query as Record<string, unknown>),
+    apiGet<AdminSalesListResult>('/admin/transactions', query as Record<string, unknown>),
 
   users: (query: UsersQuery) =>
     apiGet<PaginatedResult<AdminUserSummary>>('/admin/users', query as Record<string, unknown>),
@@ -270,6 +282,21 @@ export const adminApi = {
     serviceChargePercent?: number
     overdueDailyInterestPercent?: number
   }) => apiPut<AdminLoanConfig>('/admin/config/loan', body),
+
+  getVehicleFuelCaps: () =>
+    apiGet<AdminVehicleFuelCapsConfig>('/admin/config/vehicle-fuel-caps'),
+
+  setVehicleFuelCaps: (caps: Partial<Record<VehicleType, number>>) =>
+    apiPut<AdminVehicleFuelCapsConfig>('/admin/config/vehicle-fuel-caps', { caps }),
+
+  getReferralConfig: () => apiGet<AdminReferralConfig>('/admin/config/referrals'),
+
+  setReferralConfig: (body: {
+    bonusLitres?: number
+    referencePricePerLitre?: number
+    milestoneCount?: number
+    debtReductionPercent?: number
+  }) => apiPut<AdminReferralConfig>('/admin/config/referrals', body),
 
   reconciliationMerchants: (page = 1, limit = 20) =>
     apiGet<PaginatedResult<ReconciliationMerchantRow>>('/admin/reconciliation/merchants', {

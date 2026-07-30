@@ -12,7 +12,6 @@ import {
   PageHeader,
   Select,
   StatusBadge,
-  Textarea,
 } from '../components/ui'
 import { downloadCsv, formatCurrency, formatDate } from '../lib/utils'
 import type { AdminLoanListItem, AdminOverdueLoanItem } from '../types/api'
@@ -35,8 +34,6 @@ export function LoansManagePage() {
   const [limit, setLimit] = useState(20)
   const [status, setStatus] = useState(initialStatus)
   const [dpdBucket, setDpdBucket] = useState('')
-  const [rejectLoan, setRejectLoan] = useState<AdminLoanListItem | null>(null)
-  const [rejectReason, setRejectReason] = useState('')
   const [closeLoan, setCloseLoan] = useState<AdminLoanListItem | null>(null)
   const [closeNote, setCloseNote] = useState('')
   const [closeResolution, setCloseResolution] = useState<'repaid' | 'defaulted'>('repaid')
@@ -72,31 +69,13 @@ export function LoansManagePage() {
     void qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
   }
 
-  const approveMutation = useMutation({
-    mutationFn: (id: string) => adminApi.approveLoan(id),
-    onSuccess: () => {
-      invalidate()
-      setActionMessage('Loan approved and fuel credit disbursed')
-    },
-  })
-
-  const rejectMutation = useMutation({
-    mutationFn: () => adminApi.rejectLoan(rejectLoan!.id, rejectReason.trim() || 'Rejected by admin'),
-    onSuccess: () => {
-      invalidate()
-      setRejectLoan(null)
-      setRejectReason('')
-      setActionMessage('Loan rejected')
-    },
-  })
-
   const closeMutation = useMutation({
     mutationFn: () => adminApi.closeLoan(closeLoan!.id, closeResolution, closeNote),
     onSuccess: () => {
       invalidate()
       setCloseLoan(null)
       setCloseNote('')
-      setActionMessage('Loan closed')
+      setActionMessage('Purchase closed')
     },
   })
 
@@ -148,12 +127,12 @@ export function LoansManagePage() {
       },
       {
         id: 'amounts',
-        header: 'Facility',
+        header: 'Purchase',
         cell: ({ row }) => (
           <div className="text-sm">
-            <p>{formatCurrency(row.original.breakdown.amountDisbursed)} disbursed</p>
+            <p>{formatCurrency(row.original.breakdown.amountSpent)} fuel</p>
             <p className="text-xs text-(--text-muted)">
-              Spent {formatCurrency(row.original.breakdown.amountSpent)} · To pay{' '}
+              To repay{' '}
               <span className="text-amber-500">
                 {formatCurrency(row.original.breakdown.amountToPay)}
               </span>
@@ -200,20 +179,6 @@ export function LoansManagePage() {
                 Open
               </Button>
             </Link>
-            {row.original.status === 'pending' && (
-              <>
-                <Button
-                  size="sm"
-                  onClick={() => approveMutation.mutate(row.original.id)}
-                  disabled={approveMutation.isPending}
-                >
-                  Disburse
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => setRejectLoan(row.original)}>
-                  Reject
-                </Button>
-              </>
-            )}
             {['active', 'partially_repaid', 'defaulted'].includes(row.original.status) && (
               <Button size="sm" variant="danger" onClick={() => setCloseLoan(row.original)}>
                 Close
@@ -223,7 +188,7 @@ export function LoansManagePage() {
         ),
       },
     ],
-    [approveMutation.isPending],
+    [],
   )
 
   const handleExport = () => {
@@ -258,8 +223,8 @@ export function LoansManagePage() {
   return (
     <div>
       <PageHeader
-        title="Loan management"
-        description="Approve & disburse, reject, collections, and close facilities"
+        title="Purchases & defaulters"
+        description="Outstanding fuel purchases, overdue repayments, and DPD collections (30/60/90)"
         actions={
           <>
             <Link to="/loans">
@@ -285,10 +250,10 @@ export function LoansManagePage() {
 
       <div className="mb-4 flex flex-wrap gap-2">
         {([
-          ['all', 'All loans'],
+          ['all', 'All purchases'],
           ['overdue', 'Overdue'],
           ['unpaid', 'Unpaid'],
-          ['collections', 'Collections'],
+          ['collections', 'Defaulters (DPD)'],
         ] as const).map(([key, label]) => (
           <Button
             key={key}
@@ -325,12 +290,10 @@ export function LoansManagePage() {
               }}
             >
               <option value="">All statuses</option>
-              <option value="pending">Pending</option>
               <option value="active">Active</option>
               <option value="partially_repaid">Partially repaid</option>
               <option value="repaid">Repaid</option>
               <option value="defaulted">Defaulted</option>
-              <option value="rejected">Rejected</option>
             </Select>
           ) : tab === 'collections' ? (
             <Select
@@ -351,35 +314,9 @@ export function LoansManagePage() {
         }
       />
 
-      <Modal open={!!rejectLoan} onClose={() => setRejectLoan(null)} title="Reject loan">
+      <Modal open={!!closeLoan} onClose={() => setCloseLoan(null)} title="Close purchase">
         <p className="mb-4 text-sm text-(--text-secondary)">
-          Reject application for {rejectLoan?.customer.firstName} {rejectLoan?.customer.lastName}
-        </p>
-        <FormField label="Reason">
-          <Textarea
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="Reason shown to ops / audit trail"
-            rows={3}
-          />
-        </FormField>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setRejectLoan(null)}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => rejectMutation.mutate()}
-            disabled={rejectMutation.isPending}
-          >
-            {rejectMutation.isPending ? 'Rejecting…' : 'Reject'}
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal open={!!closeLoan} onClose={() => setCloseLoan(null)} title="Close loan">
-        <p className="mb-4 text-sm text-(--text-secondary)">
-          Close loan for {closeLoan?.customer.firstName} {closeLoan?.customer.lastName} — outstanding{' '}
+          Close purchase for {closeLoan?.customer.firstName} {closeLoan?.customer.lastName} — outstanding{' '}
           {formatCurrency(closeLoan?.breakdown.amountToPay ?? 0)}
         </p>
         <FormField label="Resolution">
@@ -403,7 +340,7 @@ export function LoansManagePage() {
             onClick={() => closeMutation.mutate()}
             disabled={closeMutation.isPending}
           >
-            {closeMutation.isPending ? 'Closing…' : 'Close loan'}
+            {closeMutation.isPending ? 'Closing…' : 'Close purchase'}
           </Button>
         </div>
       </Modal>

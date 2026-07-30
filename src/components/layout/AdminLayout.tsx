@@ -6,16 +6,17 @@ import { Button } from '../ui'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
-  { to: '/transactions', label: 'Transactions', icon: '⛽' },
+  { to: '/revenue', label: 'Revenue', icon: '💵' },
+  { to: '/transactions', label: 'Fuel sales', icon: '⛽' },
   { to: '/users', label: 'Users', icon: '👥' },
   { to: '/kyc', label: 'KYC', icon: '🪪' },
   { to: '/merchants', label: 'Merchants', icon: '🏪' },
-  { to: '/loans', label: 'Loans', icon: '💳', end: false },
+  { to: '/loans', label: 'Defaulters', icon: '⛽', end: false },
   { to: '/settlements', label: 'Settlements', icon: '💰' },
   { to: '/reconciliation', label: 'Reconciliation', icon: '🧾' },
   { to: '/support', label: 'Support', icon: '🎫' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
-  { to: '/demo/qr', label: 'QR Demo', icon: '📷' },
+  // { to: '/demo/qr', label: 'QR Demo', icon: '📷' },
 ]
 
 export function AdminLayout() {

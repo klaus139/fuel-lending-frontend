@@ -115,9 +115,9 @@ export type AdminDashboardData = {
     new7d: number
     new30d: number
   }
-  loans: {
-    pending: number
-    active: number
+  /** Outstanding unpaid fuel purchases. */
+  purchases: {
+    unpaid: number
     partiallyRepaid: number
     overdue: number
     totalOutstanding: number
@@ -130,12 +130,23 @@ export type AdminDashboardData = {
   sales: {
     todayCount: number
     todayVolume: number
+    todayLitres: number
     last7DaysCount: number
     last7DaysVolume: number
+    last7DaysLitres: number
     last30DaysCount: number
     last30DaysVolume: number
+    last30DaysLitres: number
     allTimeCount: number
     allTimeVolume: number
+    allTimeLitres: number
+  }
+  /** Platform service-charge revenue (company take). */
+  revenue: {
+    today: number
+    last7Days: number
+    last30Days: number
+    allTime: number
   }
   transactions: {
     total: number
@@ -172,9 +183,32 @@ export type RepaymentRateReport = {
 export type TransactionVolumeReport = {
   totalCount: number
   totalVolume: number
+  totalLitres: number
+  /** Sum of purchase service charges in the filter window. */
+  totalServiceCharge: number
   completedCount: number
   completedVolume: number
-  byDay: { date: string; count: number; volume: number }[]
+  completedLitres: number
+  byDay: { date: string; count: number; volume: number; litres: number }[]
+}
+
+/** Company revenue = sum of service charges on completed sales. */
+export type CompanyRevenueReport = {
+  totalRevenue: number
+  salesCount: number
+  totalLitres: number
+  totalFuelAmount: number
+  averageRevenuePerSale: number
+  fromDate?: string
+  toDate?: string
+  merchantCode?: string
+  byDay: {
+    date: string
+    revenue: number
+    salesCount: number
+    litres: number
+    fuelAmount: number
+  }[]
 }
 
 export type AdminUserSummary = {
@@ -278,32 +312,48 @@ export type SendLoanReminderResult = {
 export type AdminTransactionBreakdown = {
   litresConsumed: number
   fuelCost: number
+  /** @deprecated use serviceCharge on AdminSaleRow */
   interestAdded: number
   purchaseTotal: number
 }
 
+/** Merchant fuel sale row — litres + amounts (not loans). */
 export type AdminSaleRow = {
   id: string
-  userId?: string
-  loanId?: string
   fuelLitres: number
   pricePerLitre: number
+  /** Fuel cost only (litres × price/L). */
   amount: number
+  serviceCharge: number
+  purchaseTotal: number
   status: TransactionStatus
+  purchaseType: string
   merchantCode?: string
   businessName?: string
   stationName?: string
+  settlementStatus: 'settled' | 'unsettled' | 'n/a'
   settlementId?: string
-  completedAt?: string
-  createdAt: string
   customerSnapshot?: {
     firstName: string
     lastName: string
     email: string
     phone: string
   }
-  transactionBreakdown: AdminTransactionBreakdown
-  loanBreakdown?: LoanBreakdown
+  declineReason?: string
+  completedAt?: string
+  createdAt: string
+}
+
+export type AdminSalesSummary = {
+  salesCount: number
+  totalLitres: number
+  totalFuelAmount: number
+  totalServiceCharge: number
+  totalPurchaseAmount: number
+}
+
+export type AdminSalesListResult = PaginatedResult<AdminSaleRow> & {
+  summary: AdminSalesSummary
 }
 
 export type AdminMerchantSummary = {
@@ -460,6 +510,29 @@ export type AdminLoanConfig = {
   }
 }
 
+export type VehicleType = 'bike' | 'car' | 'keke' | 'bus' | 'taxi' | 'trailer'
+
+export type VehicleFuelCaps = Record<VehicleType, number>
+
+export type AdminVehicleFuelCapsConfig = {
+  caps: VehicleFuelCaps
+  source: 'database' | 'env'
+  vehicleTypes: VehicleType[]
+}
+
+export type AdminReferralConfig = {
+  bonusLitres: number
+  referencePricePerLitre: number
+  milestoneCount: number
+  debtReductionPercent: number
+  sources: {
+    bonusLitres: 'database' | 'env'
+    referencePricePerLitre: 'database' | 'env'
+    milestoneCount: 'database' | 'env'
+    debtReductionPercent: 'database' | 'env'
+  }
+}
+
 export type SalesQuery = {
   page?: number
   limit?: number
@@ -468,7 +541,7 @@ export type SalesQuery = {
   fromDate?: string
   toDate?: string
   settlementStatus?: 'unsettled' | 'settled'
-  sortBy?: 'createdAt' | 'amount' | 'completedAt'
+  sortBy?: 'createdAt' | 'amount' | 'completedAt' | 'serviceCharge' | 'fuelLitres'
   sortOrder?: 'asc' | 'desc'
 }
 
