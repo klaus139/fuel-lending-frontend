@@ -492,6 +492,46 @@ export type AdminMerchantDailySalesRow = {
   grossAmount: number
 }
 
+export type NetworkFuelMerchantRow = {
+  merchantUserId: string
+  merchantProfileId: string
+  merchantCode: string
+  businessName: string
+  postedPricePerLitre: number | null
+  salesCount: number
+  totalLitres: number
+  totalFuelAmount: number
+  averageSoldPricePerLitre: number
+}
+
+export type NetworkFuelDayRow = {
+  date: string
+  salesCount: number
+  totalLitres: number
+  totalFuelAmount: number
+  averageSoldPricePerLitre: number
+}
+
+export type NetworkFuelStats = {
+  fromDate?: string
+  toDate?: string
+  postedPrices: {
+    merchantsWithPrice: number
+    average: number
+    min: number
+    max: number
+  }
+  period: {
+    salesCount: number
+    totalLitres: number
+    totalFuelAmount: number
+    averageSoldPricePerLitre: number
+    merchantCountWithSales: number
+  }
+  byMerchant: NetworkFuelMerchantRow[]
+  byDay: NetworkFuelDayRow[]
+}
+
 export type ServiceChargeMode = 'fixed' | 'percent'
 
 export type AdminLoanConfig = {

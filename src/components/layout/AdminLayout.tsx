@@ -7,6 +7,7 @@ import { Button } from '../ui'
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
   { to: '/revenue', label: 'Revenue', icon: '💵' },
+  { to: '/settle', label: 'Settle', icon: '🔒' },
   { to: '/transactions', label: 'Fuel sales', icon: '⛽' },
   { to: '/users', label: 'Users', icon: '👥' },
   { to: '/kyc', label: 'KYC', icon: '🪪' },

@@ -2,10 +2,20 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { adminApi } from '../api/admin'
 import { DataTable } from '../components/data-table/DataTable'
 import {
   Button,
+  Card,
   FormField,
   Input,
   KpiCard,
@@ -14,8 +24,8 @@ import {
   Select,
   StatusBadge,
 } from '../components/ui'
-import { downloadCsv, formatCurrency, formatDate } from '../lib/utils'
-import type { AdminCreateMerchantInput, AdminMerchantSummary } from '../types/api'
+import { downloadCsv, formatCurrency, formatDate, formatLitres } from '../lib/utils'
+import type { AdminCreateMerchantInput, AdminMerchantSummary, NetworkFuelMerchantRow } from '../types/api'
 
 const emptyCreateForm: AdminCreateMerchantInput = {
   merchantName: '',
@@ -30,6 +40,29 @@ const emptyCreateForm: AdminCreateMerchantInput = {
   businessLocation: '',
   landmark: '',
   nin: '',
+}
+
+function toIsoStart(date: string): string | undefined {
+  if (!date) return undefined
+  return new Date(`${date}T00:00:00.000`).toISOString()
+}
+
+function toIsoEnd(date: string): string | undefined {
+  if (!date) return undefined
+  return new Date(`${date}T23:59:59.999`).toISOString()
+}
+
+function toDateInputValue(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function daysAgo(n: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  return toDateInputValue(d)
 }
 
 function MerchantFormFields({
@@ -96,6 +129,12 @@ export function MerchantsPage() {
   const [editForm, setEditForm] = useState<Partial<AdminCreateMerchantInput>>({})
   const [createForm, setCreateForm] = useState<AdminCreateMerchantInput>(emptyCreateForm)
 
+  const today = toDateInputValue(new Date())
+  const [fromDate, setFromDate] = useState(daysAgo(6))
+  const [toDate, setToDate] = useState(today)
+  const fromIso = toIsoStart(fromDate)
+  const toIso = toIsoEnd(toDate)
+
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'merchants', page, limit, status],
     queryFn: () =>
@@ -115,6 +154,67 @@ export function MerchantsPage() {
     queryKey: ['admin', 'merchants', 'pending-count'],
     queryFn: () => adminApi.merchants({ page: 1, limit: 1, status: 'pending' }),
   })
+
+  const { data: fuelStats, isFetching: fuelStatsFetching } = useQuery({
+    queryKey: ['admin', 'merchants', 'fuel-stats', fromIso, toIso],
+    queryFn: () => adminApi.merchantFuelStats({ fromDate: fromIso, toDate: toIso }),
+  })
+
+  const fuelMerchantColumns = useMemo<ColumnDef<NetworkFuelMerchantRow>[]>(
+    () => [
+      {
+        accessorKey: 'merchantCode',
+        header: 'Station',
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium">{row.original.merchantCode}</p>
+            <p className="text-xs text-(--text-muted)">{row.original.businessName}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'postedPricePerLitre',
+        header: 'Posted ₦/L',
+        cell: ({ row }) =>
+          row.original.postedPricePerLitre != null
+            ? formatCurrency(row.original.postedPricePerLitre)
+            : '—',
+      },
+      {
+        accessorKey: 'averageSoldPricePerLitre',
+        header: 'Sold avg ₦/L',
+        cell: ({ getValue }) => formatCurrency(getValue<number>()),
+      },
+      {
+        accessorKey: 'totalLitres',
+        header: 'Litres sold',
+        cell: ({ getValue }) => formatLitres(getValue<number>()),
+      },
+      {
+        accessorKey: 'totalFuelAmount',
+        header: 'Fuel amount',
+        cell: ({ getValue }) => formatCurrency(getValue<number>()),
+      },
+      {
+        accessorKey: 'salesCount',
+        header: 'Sales',
+      },
+      {
+        id: 'view',
+        header: '',
+        cell: ({ row }) =>
+          row.original.merchantProfileId ? (
+            <Link
+              to={`/merchants/${row.original.merchantProfileId}`}
+              className="text-xs font-medium text-(--accent) hover:underline"
+            >
+              View
+            </Link>
+          ) : null,
+      },
+    ],
+    [],
+  )
 
   const updateMutation = useMutation({
     mutationFn: () => adminApi.updateMerchant(editMerchant!.id, editForm),
@@ -295,6 +395,131 @@ export function MerchantsPage() {
           accent="red"
         />
       </div>
+
+      <Card className="mb-6 p-5">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-(--text-primary)">Network fuel stats</h2>
+            <p className="text-xs text-(--text-muted)">
+              Average posted prices and litres sold across stations for a day or period.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setFromDate(today)
+                setToDate(today)
+              }}
+            >
+              Today
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setFromDate(daysAgo(6))
+                setToDate(today)
+              }}
+            >
+              7 days
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setFromDate(daysAgo(29))
+                setToDate(today)
+              }}
+            >
+              30 days
+            </Button>
+            <div>
+              <label className="mb-1 block text-xs text-(--text-muted)">From</label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-(--text-muted)">To</label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-40"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiCard
+            label="Avg posted ₦/L"
+            value={formatCurrency(fuelStats?.postedPrices.average ?? 0)}
+            sub={
+              fuelStatsFetching
+                ? 'Updating…'
+                : `${fuelStats?.postedPrices.merchantsWithPrice ?? 0} stations · min ${formatCurrency(fuelStats?.postedPrices.min ?? 0)} · max ${formatCurrency(fuelStats?.postedPrices.max ?? 0)}`
+            }
+            accent="blue"
+          />
+          <KpiCard
+            label="Avg sold ₦/L"
+            value={formatCurrency(fuelStats?.period.averageSoldPricePerLitre ?? 0)}
+            sub="Volume-weighted across completed sales"
+            accent="green"
+          />
+          <KpiCard
+            label="Litres sold"
+            value={formatLitres(fuelStats?.period.totalLitres ?? 0)}
+            sub={`${fuelStats?.period.salesCount ?? 0} sales · ${fuelStats?.period.merchantCountWithSales ?? 0} stations`}
+            accent="amber"
+          />
+          <KpiCard
+            label="Fuel amount"
+            value={formatCurrency(fuelStats?.period.totalFuelAmount ?? 0)}
+            sub="Customer fuel cost in period"
+            accent="red"
+          />
+        </div>
+
+        {(fuelStats?.byDay.length ?? 0) > 0 && (
+          <div className="mb-4 h-56 w-full">
+            <p className="mb-2 text-xs font-medium text-(--text-muted)">Litres by day</p>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={fuelStats?.byDay ?? []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip
+                  formatter={(value) => [formatLitres(Number(value ?? 0)), 'Litres']}
+                  labelFormatter={(label) => String(label)}
+                />
+                <Bar dataKey="totalLitres" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        <div>
+          <p className="mb-2 text-xs font-medium text-(--text-muted)">By station (period)</p>
+          {(fuelStats?.byMerchant.length ?? 0) === 0 ? (
+            <p className="py-6 text-center text-sm text-(--text-muted)">
+              No completed fuel sales in this period.
+            </p>
+          ) : (
+            <DataTable
+              data={fuelStats?.byMerchant ?? []}
+              columns={fuelMerchantColumns}
+              loading={fuelStatsFetching && !fuelStats}
+            />
+          )}
+        </div>
+      </Card>
 
       <DataTable
         data={data?.items ?? []}

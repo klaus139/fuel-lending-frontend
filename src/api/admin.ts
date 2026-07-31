@@ -10,6 +10,7 @@ import type {
   CompanyRevenueReport,
   AdminUserSummary,
   AdminUserOverview,
+  AdminUserOutstanding,
   AdminRepaymentRow,
   AdminUserTransaction,
   SupportTopic,
@@ -24,6 +25,7 @@ import type {
   AdminMerchantSellerSummary,
   AdminMerchantSalesSummary,
   AdminMerchantDailySalesRow,
+  NetworkFuelStats,
   Settlement,
   AdminFinanceSettlementRow,
   SalesQuery,
@@ -100,6 +102,32 @@ export const adminApi = {
   getUser: (userId: string) => apiGet<AdminUserSummary>(`/admin/users/${userId}`),
 
   getUserOverview: (userId: string) => apiGet<AdminUserOverview>(`/admin/users/${userId}/overview`),
+
+  getUserSettlement: (userId: string) =>
+    apiGet<{
+      user: {
+        id: string
+        firstName: string
+        lastName: string
+        email: string
+        phone: string
+      }
+      walletBalance: number
+      outstanding: AdminUserOutstanding
+    }>(`/admin/users/${userId}/settlement`),
+
+  settleUserPurchase: (
+    userId: string,
+    body: { amount: number; note?: string },
+  ) =>
+    apiPost<{
+      message: string
+      creditedAmount: number
+      appliedAmount: number
+      fullyRepaid: boolean
+      outstandingBalance: number
+      walletBalance: number
+    }>(`/admin/users/${userId}/settle-purchase`, body),
 
   getUserLoans: (userId: string, page = 1, limit = 10) =>
     apiGet<PaginatedResult<LoanSummary>>(`/admin/users/${userId}/loans`, { page, limit }),
@@ -189,6 +217,9 @@ export const adminApi = {
 
   merchants: (query: MerchantsQuery) =>
     apiGet<PaginatedResult<AdminMerchantSummary>>('/admin/merchants', query as Record<string, unknown>),
+
+  merchantFuelStats: (query?: { fromDate?: string; toDate?: string }) =>
+    apiGet<NetworkFuelStats>('/admin/merchants/fuel-stats', query as Record<string, unknown>),
 
   getMerchant: (merchantId: string) => apiGet<MerchantDetail>(`/admin/merchants/${merchantId}`),
 

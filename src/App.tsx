@@ -8,6 +8,7 @@ import { ProtectedRoute, GuestRoute } from './components/ProtectedRoute'
 import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { RevenuePage } from './pages/RevenuePage'
+import { SettlePurchasePage } from './pages/SettlePurchasePage'
 import { TransactionsPage } from './pages/TransactionsPage'
 import { UsersPage } from './pages/UsersPage'
 import { UserDetailPage } from './pages/UserDetailPage'
@@ -52,6 +53,7 @@ export default function App() {
                 <Route element={<AdminLayout />}>
                   <Route index element={<DashboardPage />} />
                   <Route path="revenue" element={<RevenuePage />} />
+                  <Route path="settle" element={<SettlePurchasePage />} />
                   <Route path="transactions" element={<TransactionsPage />} />
                   <Route path="users" element={<UsersPage />} />
                   <Route path="users/:userId" element={<UserDetailPage />} />

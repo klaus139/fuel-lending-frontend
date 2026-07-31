@@ -139,7 +139,7 @@ export function DashboardPage() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-(--text-muted)">
-                Filtered total
+                Total revenue
               </p>
               <p className="mt-1 text-3xl font-bold tabular-nums text-emerald-500">
                 {revenueLoading && !revenue ? '…' : formatCurrency(revenue?.totalRevenue ?? 0)}
