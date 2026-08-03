@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -14,56 +14,56 @@ import {
   YAxis,
 } from 'recharts'
 import { adminApi } from '../api/admin'
-import { Button, Card, Input, KpiCard, PageHeader, Spinner } from '../components/ui'
+import { Card, KpiCard, PageHeader, Spinner } from '../components/ui'
 import { formatCurrency, formatLitres } from '../lib/utils'
 
 const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#3b82f6']
 
-function toIsoStart(date: string): string | undefined {
-  if (!date) return undefined
-  return new Date(`${date}T00:00:00.000`).toISOString()
-}
+// function toIsoStart(date: string): string | undefined {
+//   if (!date) return undefined
+//   return new Date(`${date}T00:00:00.000`).toISOString()
+// }
 
-function toIsoEnd(date: string): string | undefined {
-  if (!date) return undefined
-  return new Date(`${date}T23:59:59.999`).toISOString()
-}
+// function toIsoEnd(date: string): string | undefined {
+//   if (!date) return undefined
+//   return new Date(`${date}T23:59:59.999`).toISOString()
+// }
 
-function toDateInputValue(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
+// function toDateInputValue(d: Date): string {
+//   const y = d.getFullYear()
+//   const m = String(d.getMonth() + 1).padStart(2, '0')
+//   const day = String(d.getDate()).padStart(2, '0')
+//   return `${y}-${m}-${day}`
+// }
 
-type RevenuePreset = 'today' | '7d' | '30d' | 'all' | 'custom'
+// type RevenuePreset = 'today' | '7d' | '30d' | 'all' | 'custom'
 
-function rangeForPreset(preset: RevenuePreset): { from: string; to: string } {
-  const today = new Date()
-  const to = toDateInputValue(today)
-  if (preset === 'today') return { from: to, to }
-  if (preset === '7d') {
-    const from = new Date(today)
-    from.setDate(from.getDate() - 6)
-    return { from: toDateInputValue(from), to }
-  }
-  if (preset === '30d') {
-    const from = new Date(today)
-    from.setDate(from.getDate() - 29)
-    return { from: toDateInputValue(from), to }
-  }
-  if (preset === 'all') return { from: '', to: '' }
-  return { from: '', to: '' }
-}
+// function rangeForPreset(preset: RevenuePreset): { from: string; to: string } {
+//   const today = new Date()
+//   const to = toDateInputValue(today)
+//   if (preset === 'today') return { from: to, to }
+//   if (preset === '7d') {
+//     const from = new Date(today)
+//     from.setDate(from.getDate() - 6)
+//     return { from: toDateInputValue(from), to }
+//   }
+//   if (preset === '30d') {
+//     const from = new Date(today)
+//     from.setDate(from.getDate() - 29)
+//     return { from: toDateInputValue(from), to }
+//   }
+//   if (preset === 'all') return { from: '', to: '' }
+//   return { from: '', to: '' }
+// }
 
 export function DashboardPage() {
-  const [revenuePreset, setRevenuePreset] = useState<RevenuePreset>('30d')
-  const initialRange = rangeForPreset('30d')
-  const [fromDate, setFromDate] = useState(initialRange.from)
-  const [toDate, setToDate] = useState(initialRange.to)
+  // const [revenuePreset, setRevenuePreset] = useState<RevenuePreset>('30d')
+  // const initialRange = rangeForPreset('30d')
+  // const [fromDate, setFromDate] = useState(initialRange.from)
+  // const [toDate, setToDate] = useState(initialRange.to)
 
-  const fromIso = toIsoStart(fromDate)
-  const toIso = toIsoEnd(toDate)
+  // const fromIso = toIsoStart(fromDate)
+  // const toIso = toIsoEnd(toDate)
 
   const { data: dashboard, isLoading: dashLoading } = useQuery({
     queryKey: ['admin', 'dashboard'],
@@ -92,18 +92,18 @@ export function DashboardPage() {
       adminApi.transactionVolume(thirtyDaysAgo.toISOString(), new Date().toISOString()),
   })
 
-  const { data: revenue, isFetching: revenueLoading } = useQuery({
-    queryKey: ['admin', 'revenue', fromIso, toIso],
-    queryFn: () => adminApi.revenue({ fromDate: fromIso, toDate: toIso }),
-  })
+  // const { data: revenue, isFetching: revenueLoading } = useQuery({
+  //   queryKey: ['admin', 'revenue', fromIso, toIso],
+  //   queryFn: () => adminApi.revenue({ fromDate: fromIso, toDate: toIso }),
+  // })
 
-  const applyPreset = (preset: RevenuePreset) => {
-    setRevenuePreset(preset)
-    if (preset === 'custom') return
-    const range = rangeForPreset(preset)
-    setFromDate(range.from)
-    setToDate(range.to)
-  }
+  // const applyPreset = (preset: RevenuePreset) => {
+  //   setRevenuePreset(preset)
+  //   if (preset === 'custom') return
+  //   const range = rangeForPreset(preset)
+  //   setFromDate(range.from)
+  //   setToDate(range.to)
+  // }
 
   if (dashLoading || !dashboard) return <Spinner />
 
@@ -113,10 +113,10 @@ export function DashboardPage() {
     { name: 'Overdue', value: dashboard.purchases.overdue },
   ].filter((d) => d.value > 0)
 
-  const rangeLabel =
-    fromDate || toDate
-      ? `${fromDate || '…'} → ${toDate || '…'}`
-      : 'All time'
+  // const rangeLabel =
+  //   fromDate || toDate
+  //     ? `${fromDate || '…'} → ${toDate || '…'}`
+  //     : 'All time'
 
   return (
     <div>
@@ -135,7 +135,7 @@ export function DashboardPage() {
           </Link>
         </div>
 
-        <Card className="mb-4 p-5">
+        {/* <Card className="mb-4 p-5">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-(--text-muted)">
@@ -187,7 +187,7 @@ export function DashboardPage() {
               />
             </div>
           </div>
-        </Card>
+        </Card> */}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Link to="/revenue" className="block transition hover:opacity-90">
