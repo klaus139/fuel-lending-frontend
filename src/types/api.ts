@@ -617,7 +617,6 @@ export type SupportTicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 
 export type SupportTopic =
   | 'credit_issue'
-  | 'loan_issue'
   | 'fuel_disbursement'
   | 'repayment'
   | 'other'
@@ -664,11 +663,8 @@ export type AdminUserKyc = {
   reviewedAt?: string | null
   verification?: {
     ninVerified: boolean
-    bvnVerified: boolean
     ninFirstNameScore?: number
     ninLastNameScore?: number
-    bvnFirstNameScore?: number
-    bvnLastNameScore?: number
   }
   photoUrl?: string
   motorPhotoUrl?: string
@@ -757,7 +753,6 @@ export type AdminKycSubmitResult = {
 }
 
 export type AdminKycSubmitInput = {
-  bvn: string
   nin: string
   dateOfBirth: string
   address: string
@@ -840,4 +835,59 @@ export type AdminUserTransaction = {
   }
   completedAt?: string
   createdAt: string
+}
+
+export type NotificationCategory = 'broadcast' | 'promo' | 'support' | 'direct' | 'system'
+export type NotificationAudience = 'all' | 'all_customers' | 'all_merchants' | 'users'
+export type NotificationContentType = 'text' | 'image' | 'video' | 'mixed'
+export type NotificationStatus = 'draft' | 'published' | 'archived'
+
+export type NotificationMedia = {
+  type: 'image' | 'video'
+  url: string
+  thumbnailUrl?: string
+  mimeType?: string
+}
+
+export type NotificationMeta = {
+  categories: { value: NotificationCategory; label: string }[]
+  audiences: { value: NotificationAudience }[]
+  contentTypes: { value: NotificationContentType }[]
+}
+
+export type AdminNotificationItem = {
+  id: string
+  category: NotificationCategory
+  categoryLabel: string
+  contentType: NotificationContentType
+  title: string
+  body: string
+  media: NotificationMedia[]
+  audience: NotificationAudience
+  userIds: string[]
+  status: NotificationStatus
+  data: Record<string, unknown>
+  publishedAt?: string
+  expiresAt?: string
+  createdAt: string
+  createdByAdminId?: string
+}
+
+export type CreateNotificationInput = {
+  category: NotificationCategory
+  title: string
+  body: string
+  audience: NotificationAudience
+  userIds?: string[]
+  media?: NotificationMedia[]
+  expiresAt?: string
+  status?: 'draft' | 'published'
+  data?: Record<string, unknown>
+}
+
+export type NotificationsQuery = {
+  page?: number
+  limit?: number
+  category?: NotificationCategory
+  status?: NotificationStatus
 }

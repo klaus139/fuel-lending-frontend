@@ -16,6 +16,7 @@ const navItems = [
   { to: '/settlements', label: 'Settlements', icon: '💰' },
   { to: '/reconciliation', label: 'Reconciliation', icon: '🧾' },
   { to: '/support', label: 'Support', icon: '🎫' },
+  { to: '/notifications', label: 'Notifications', icon: '🔔' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
   // { to: '/demo/qr', label: 'QR Demo', icon: '📷' },
 ]

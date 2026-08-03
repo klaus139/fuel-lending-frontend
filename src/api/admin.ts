@@ -53,6 +53,11 @@ import type {
   AdminKycSubmitResult,
   AdminVirtualAccount,
   KycStatus,
+  NotificationMeta,
+  AdminNotificationItem,
+  CreateNotificationInput,
+  NotificationsQuery,
+  NotificationMedia,
 } from '../types/api'
 
 export const authApi = {
@@ -166,7 +171,6 @@ export const adminApi = {
 
   submitKycForUser: (userId: string, input: AdminKycSubmitInput) => {
     const form = new FormData()
-    form.append('bvn', input.bvn)
     form.append('nin', input.nin)
     form.append('dateOfBirth', input.dateOfBirth)
     form.append('address', input.address)
@@ -363,4 +367,21 @@ export const adminApi = {
 
   initiateSettlementFromSnapshot: (snapshotId: string) =>
     apiPost<Settlement>(`/admin/reconciliation/snapshots/${snapshotId}/initiate-settlement`),
+
+  notificationMeta: () => apiGet<NotificationMeta>('/admin/notifications/meta'),
+
+  listNotifications: (query: NotificationsQuery = {}) =>
+    apiGet<PaginatedResult<AdminNotificationItem>>(
+      '/admin/notifications',
+      query as Record<string, unknown>,
+    ),
+
+  createNotification: (body: CreateNotificationInput) =>
+    apiPost<AdminNotificationItem>('/admin/notifications', body),
+
+  uploadNotificationMedia: async (file: File): Promise<NotificationMedia> => {
+    const form = new FormData()
+    form.append('file', file)
+    return apiPostFormData<NotificationMedia>('/admin/notifications/media', form)
+  },
 }

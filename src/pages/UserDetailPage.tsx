@@ -23,7 +23,6 @@ import type { AdminKycSubmitInput, SupportTopic } from '../types/api'
 
 const MESSAGE_TOPICS: { value: SupportTopic; label: string }[] = [
   { value: 'credit_issue', label: 'Account / limit issue' },
-  { value: 'loan_issue', label: 'Purchase / outstanding issue' },
   { value: 'fuel_disbursement', label: 'Fuel disbursement' },
   { value: 'repayment', label: 'Repayment' },
   { value: 'other', label: 'Other' },
@@ -33,7 +32,6 @@ const emptyKycForm: Omit<AdminKycSubmitInput, 'photo' | 'motorPhoto'> & {
   photo: File | null
   motorPhoto: File | null
 } = {
-  bvn: '',
   nin: '',
   dateOfBirth: '',
   address: '',
@@ -372,7 +370,7 @@ export function UserDetailPage() {
                 {kyc.verification && (
                   <DetailRow
                     label="Identity"
-                    value={`NIN ${kyc.verification.ninVerified ? '✓' : '✗'} · BVN ${kyc.verification.bvnVerified ? '✓' : '✗'}`}
+                    value={`NIN ${kyc.verification.ninVerified ? '✓' : '✗'}`}
                   />
                 )}
                 <DetailRow label="Submitted" value={formatDate(kyc.submittedAt)} />
@@ -580,17 +578,10 @@ export function UserDetailPage() {
         wide
       >
         <p className="mb-4 text-sm text-(--text-secondary)">
-          Upload identity and vehicle details on behalf of this customer. Dojah verification still
-          runs when configured.
+          Upload identity and vehicle details on behalf of this customer. Dojah NIN verification
+          still runs when configured.
         </p>
         <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
-          <FormField label="BVN">
-            <Input
-              value={kycForm.bvn}
-              onChange={(e) => setKycForm((f) => ({ ...f, bvn: e.target.value }))}
-              placeholder="11-digit BVN"
-            />
-          </FormField>
           <FormField label="NIN">
             <Input
               value={kycForm.nin}
@@ -678,7 +669,6 @@ export function UserDetailPage() {
           <Button
             disabled={
               submitKycMutation.isPending ||
-              !kycForm.bvn ||
               !kycForm.nin ||
               !kycForm.dateOfBirth ||
               !kycForm.photo ||

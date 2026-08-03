@@ -21,6 +21,7 @@ import { LoanDetailPage } from './pages/LoanDetailPage'
 import { ReconciliationPage } from './pages/ReconciliationPage'
 import { SettlementsPage } from './pages/SettlementsPage'
 import { SupportTicketsPage } from './pages/SupportTicketsPage'
+import { NotificationsPage } from './pages/NotificationsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { TestQrCodePage } from './pages/TestQrCodePage'
 import { TestQrCustomerPage } from './pages/TestQrCustomerPage'
@@ -66,6 +67,7 @@ export default function App() {
                   <Route path="settlements" element={<SettlementsPage />} />
                   <Route path="reconciliation" element={<ReconciliationPage />} />
                   <Route path="support" element={<SupportTicketsPage />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                 </Route>
               </Route>
