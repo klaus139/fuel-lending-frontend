@@ -653,6 +653,41 @@ export type SupportTicketsQuery = {
   userId?: string
 }
 
+export type AdminPurchaseRating = {
+  id: string
+  transactionId: string
+  userId: string
+  customerName: string
+  customerEmail: string
+  merchantUserId: string
+  merchantProfileId?: string
+  stationName: string
+  stationCode?: string
+  rating: number
+  review?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type AdminRatingsStats = {
+  total: number
+  averageRating: number
+  ratingCounts: Record<number, number>
+}
+
+export type AdminRatingsListResult = PaginatedResult<AdminPurchaseRating> & {
+  stats: AdminRatingsStats
+}
+
+export type RatingsQuery = {
+  page?: number
+  limit?: number
+  rating?: number
+  minRating?: number
+  merchantUserId?: string
+  userId?: string
+}
+
 export type KycStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected'
 
 export type AdminUserKyc = {

@@ -38,6 +38,8 @@ import type {
   SupportTicketSummary,
   SupportTicketDetail,
   SupportTicketStatus,
+  AdminRatingsListResult,
+  RatingsQuery,
   AdminLoanConfig,
   AdminVehicleFuelCapsConfig,
   AdminReferralConfig,
@@ -306,6 +308,9 @@ export const adminApi = {
 
   replySupportTicket: (ticketId: string, message: string) =>
     apiPost<SupportTicketDetail>(`/admin/support/tickets/${ticketId}/replies`, { message }),
+
+  ratings: (query: RatingsQuery) =>
+    apiGet<AdminRatingsListResult>('/admin/ratings', query as Record<string, unknown>),
 
   getLoanConfig: () => apiGet<AdminLoanConfig>('/admin/config/loan'),
 
