@@ -244,6 +244,13 @@ export function MerchantDetailPage() {
     ...(m.cacDocumentUrl
       ? [{ label: 'CAC document', value: m.cacDocumentUrl }]
       : []),
+    {
+      label: 'Map coordinates',
+      value:
+        m.latitude != null && m.longitude != null
+          ? `${m.latitude}, ${m.longitude}`
+          : 'Not set (will auto-geocode on approve / nearby search)',
+    },
     { label: 'Applied / created', value: formatDateTime(m.createdAt) },
     ...(m.reviewedAt ? [{ label: 'Reviewed', value: formatDateTime(m.reviewedAt) }] : []),
     ...(m.rejectReason ? [{ label: 'Decline reason', value: m.rejectReason }] : []),

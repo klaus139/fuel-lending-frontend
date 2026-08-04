@@ -42,6 +42,8 @@ const emptyCreateForm: AdminCreateMerchantInput = {
   landmark: '',
   nin: '',
   cacNumber: '',
+  latitude: undefined,
+  longitude: undefined,
 }
 
 function toIsoStart(date: string): string | undefined {
@@ -124,6 +126,32 @@ function MerchantFormFields({
           placeholder="e.g. RC1234567"
         />
       </FormField>
+      <FormField label="Latitude (optional)">
+        <Input
+          value={form.latitude != null ? String(form.latitude) : ''}
+          onChange={(e) => {
+            const raw = e.target.value.trim()
+            setForm({ latitude: raw === '' ? undefined : Number(raw) })
+          }}
+          placeholder="e.g. 6.6018"
+          inputMode="decimal"
+        />
+      </FormField>
+      <FormField label="Longitude (optional)">
+        <Input
+          value={form.longitude != null ? String(form.longitude) : ''}
+          onChange={(e) => {
+            const raw = e.target.value.trim()
+            setForm({ longitude: raw === '' ? undefined : Number(raw) })
+          }}
+          placeholder="e.g. 3.3515"
+          inputMode="decimal"
+        />
+      </FormField>
+      <p className="sm:col-span-2 mb-2 text-xs text-(--text-muted)">
+        Leave lat/lng blank to auto-geocode from address + city + state. For best map accuracy,
+        paste coordinates from Google Maps (right‑click the station → copy).
+      </p>
     </div>
   )
 }
@@ -240,6 +268,14 @@ export function MerchantsPage() {
       const body: AdminCreateMerchantInput = {
         ...createForm,
         cacNumber: createForm.cacNumber?.trim() || undefined,
+        latitude:
+          createForm.latitude != null && Number.isFinite(createForm.latitude)
+            ? createForm.latitude
+            : undefined,
+        longitude:
+          createForm.longitude != null && Number.isFinite(createForm.longitude)
+            ? createForm.longitude
+            : undefined,
       }
       return adminApi.createMerchant(body)
     },
@@ -292,6 +328,8 @@ export function MerchantsPage() {
       businessLocation: m.businessLocation,
       landmark: m.landmark,
       cacNumber: m.cacNumber ?? '',
+      latitude: m.latitude,
+      longitude: m.longitude,
     })
   }
 

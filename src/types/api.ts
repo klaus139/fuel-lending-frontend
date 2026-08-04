@@ -452,6 +452,8 @@ export type AdminCreateMerchantInput = {
   nin: string
   /** Optional CAC / RC number */
   cacNumber?: string
+  latitude?: number
+  longitude?: number
 }
 
 export type MerchantDetail = AdminMerchantSummary & {
