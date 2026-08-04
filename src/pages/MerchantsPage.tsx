@@ -23,6 +23,7 @@ import {
   PageHeader,
   Select,
   StatusBadge,
+  Textarea,
 } from '../components/ui'
 import { downloadCsv, formatCurrency, formatDate, formatLitres } from '../lib/utils'
 import type { AdminCreateMerchantInput, AdminMerchantSummary, NetworkFuelMerchantRow } from '../types/api'
@@ -40,6 +41,7 @@ const emptyCreateForm: AdminCreateMerchantInput = {
   businessLocation: '',
   landmark: '',
   nin: '',
+  cacNumber: '',
 }
 
 function toIsoStart(date: string): string | undefined {
@@ -115,6 +117,13 @@ function MerchantFormFields({
           <Input value={form.nin ?? ''} onChange={(e) => setForm({ nin: e.target.value })} placeholder="11 digits" />
         </FormField>
       )}
+      <FormField label="CAC / RC number (optional)">
+        <Input
+          value={form.cacNumber ?? ''}
+          onChange={(e) => setForm({ cacNumber: e.target.value })}
+          placeholder="e.g. RC1234567"
+        />
+      </FormField>
     </div>
   )
 }
@@ -128,6 +137,8 @@ export function MerchantsPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editForm, setEditForm] = useState<Partial<AdminCreateMerchantInput>>({})
   const [createForm, setCreateForm] = useState<AdminCreateMerchantInput>(emptyCreateForm)
+  const [rejectTarget, setRejectTarget] = useState<AdminMerchantSummary | null>(null)
+  const [rejectReason, setRejectReason] = useState('')
 
   const today = toDateInputValue(new Date())
   const [fromDate, setFromDate] = useState(daysAgo(6))
@@ -225,7 +236,13 @@ export function MerchantsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: () => adminApi.createMerchant(createForm),
+    mutationFn: () => {
+      const body: AdminCreateMerchantInput = {
+        ...createForm,
+        cacNumber: createForm.cacNumber?.trim() || undefined,
+      }
+      return adminApi.createMerchant(body)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'merchants'] })
       setShowCreate(false)
@@ -235,12 +252,29 @@ export function MerchantsPage() {
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => adminApi.approveMerchant(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'merchants'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'merchants'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+    },
+  })
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      adminApi.rejectMerchant(id, reason),
+    onSuccess: () => {
+      setRejectTarget(null)
+      setRejectReason('')
+      qc.invalidateQueries({ queryKey: ['admin', 'merchants'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+    },
   })
 
   const suspendMutation = useMutation({
     mutationFn: (id: string) => adminApi.suspendMerchant(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'merchants'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'merchants'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+    },
   })
 
   const openEdit = (m: AdminMerchantSummary) => {
@@ -257,6 +291,7 @@ export function MerchantsPage() {
       state: m.state,
       businessLocation: m.businessLocation,
       landmark: m.landmark,
+      cacNumber: m.cacNumber ?? '',
     })
   }
 
@@ -312,14 +347,33 @@ export function MerchantsPage() {
               to={`/merchants/${row.original.id}`}
               className="inline-flex items-center rounded-lg border border-(--border) bg-(--bg-hover) px-3 py-1.5 text-xs font-medium text-(--text-primary) hover:bg-(--border)"
             >
-              View
+              {row.original.status === 'pending' ? 'Review details' : 'View'}
             </Link>
-            <Button size="sm" variant="secondary" onClick={() => openEdit(row.original)}>
-              Edit
-            </Button>
             {row.original.status === 'pending' && (
-              <Button size="sm" onClick={() => approveMutation.mutate(row.original.id)}>
-                Approve
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => approveMutation.mutate(row.original.id)}
+                  disabled={approveMutation.isPending}
+                >
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => {
+                    setRejectTarget(row.original)
+                    setRejectReason('')
+                  }}
+                  disabled={rejectMutation.isPending}
+                >
+                  Decline
+                </Button>
+              </>
+            )}
+            {row.original.status !== 'pending' && (
+              <Button size="sm" variant="secondary" onClick={() => openEdit(row.original)}>
+                Edit
               </Button>
             )}
             {row.original.status === 'approved' && (
@@ -331,7 +385,7 @@ export function MerchantsPage() {
         ),
       },
     ],
-    [approveMutation, suspendMutation],
+    [approveMutation, rejectMutation, suspendMutation],
   )
 
   const handleExport = () => {
@@ -356,7 +410,7 @@ export function MerchantsPage() {
     <div>
       <PageHeader
         title="Merchants"
-        description="Fuel stations — view sales, branches, and staff"
+        description="Fuel stations — review applications, manage onboarding, sales, and staff"
         actions={
           <>
             <Button variant="secondary" onClick={handleExport}>
@@ -380,14 +434,24 @@ export function MerchantsPage() {
           sub={`${dashboard?.merchantProfiles.new30d ?? 0} in last 30 days`}
           accent="blue"
         />
-        <KpiCard
-          label="Pending approval"
-          value={String(
-            dashboard?.merchantProfiles.pending ?? pendingMerchants?.pagination.total ?? '—',
-          )}
-          sub={`${dashboard?.merchantProfiles.suspended ?? 0} suspended`}
-          accent="amber"
-        />
+        <button
+          type="button"
+          className="text-left"
+          onClick={() => {
+            setStatus('pending')
+            setPage(1)
+          }}
+          title="Show pending applications"
+        >
+          <KpiCard
+            label="Pending approval"
+            value={String(
+              dashboard?.merchantProfiles.pending ?? pendingMerchants?.pagination.total ?? '—',
+            )}
+            sub="Click to filter · open row → Review details"
+            accent="amber"
+          />
+        </button>
         <KpiCard
           label="Showing"
           value={String(data?.pagination.total ?? '—')}
@@ -395,6 +459,17 @@ export function MerchantsPage() {
           accent="red"
         />
       </div>
+
+      {status === 'pending' && (
+        <Card className="mb-4 border-amber-500/30 bg-amber-500/5 p-4 text-sm text-(--text-secondary)">
+          <p className="font-medium text-amber-600">Station applications</p>
+          <p className="mt-1">
+            Open <strong>Review details</strong> to see the full application (contact, address, NIN
+            location fields). Use <strong>Approve</strong> to email login credentials, or{' '}
+            <strong>Decline</strong> with a reason.
+          </p>
+        </Card>
+      )}
 
       <Card className="mb-6 p-5">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -535,7 +610,7 @@ export function MerchantsPage() {
           <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
             <option value="">All statuses</option>
             <option value="approved">Approved</option>
-            <option value="pending">Pending</option>
+                <option value="pending">Pending applications</option>
             <option value="suspended">Suspended</option>
             <option value="rejected">Rejected</option>
           </Select>
@@ -568,6 +643,52 @@ export function MerchantsPage() {
           <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
           <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
             {createMutation.isPending ? 'Creating...' : 'Create'}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={!!rejectTarget}
+        onClose={() => {
+          setRejectTarget(null)
+          setRejectReason('')
+        }}
+        title="Decline station application"
+      >
+        {rejectTarget && (
+          <p className="mb-3 text-sm text-(--text-secondary)">
+            Declining <strong>{rejectTarget.businessName}</strong> ({rejectTarget.email}). The contact
+            person will be emailed this reason.
+          </p>
+        )}
+        <FormField label="Reason">
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+            placeholder="Why is this application being declined?"
+          />
+        </FormField>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setRejectTarget(null)
+              setRejectReason('')
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            disabled={
+              !rejectTarget || rejectReason.trim().length < 5 || rejectMutation.isPending
+            }
+            onClick={() =>
+              rejectMutation.mutate({ id: rejectTarget!.id, reason: rejectReason.trim() })
+            }
+          >
+            {rejectMutation.isPending ? 'Declining…' : 'Decline application'}
           </Button>
         </div>
       </Modal>

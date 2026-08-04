@@ -373,6 +373,11 @@ export type AdminMerchantSummary = {
   email: string
   phone: string
   fuelPricePerLitre?: number
+  cacNumber?: string
+  cacDocumentUrl?: string
+  ninVerified?: boolean
+  ninFirstNameScore?: number
+  ninLastNameScore?: number
   createdAt: string
 }
 
@@ -443,11 +448,14 @@ export type AdminCreateMerchantInput = {
   businessLocation: string
   landmark: string
   nin: string
+  /** Optional CAC / RC number */
+  cacNumber?: string
 }
 
 export type MerchantDetail = AdminMerchantSummary & {
   rejectReason?: string
   fuelPricePerLitre?: number
+  reviewedAt?: string
 }
 
 export type AdminMerchantBranchSummary = {
