@@ -375,6 +375,8 @@ export type AdminMerchantSummary = {
   fuelPricePerLitre?: number
   cacNumber?: string
   cacDocumentUrl?: string
+  latitude?: number
+  longitude?: number
   ninVerified?: boolean
   ninFirstNameScore?: number
   ninLastNameScore?: number
