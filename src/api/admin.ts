@@ -63,6 +63,7 @@ import type {
   AdminWebhookInvestigateResult,
   AdminWebhookLogDetail,
   AdminWebhookLogSummary,
+  MerchantAppRelease,
 } from '../types/api'
 
 export const authApi = {
@@ -410,4 +411,27 @@ export const adminApi = {
     ),
 
   getWebhook: (id: string) => apiGet<AdminWebhookLogDetail>(`/admin/webhooks/${id}`),
+
+  getLatestMerchantAppRelease: () =>
+    apiGet<MerchantAppRelease | null>('/admin/merchant-app-releases/latest'),
+
+  listMerchantAppReleases: (page = 1, limit = 20) =>
+    apiGet<PaginatedResult<MerchantAppRelease>>('/admin/merchant-app-releases', {
+      page,
+      limit,
+    }),
+
+  uploadMerchantAppRelease: async (input: {
+    file: File
+    version: string
+    versionCode?: number
+    notes?: string
+  }): Promise<MerchantAppRelease> => {
+    const form = new FormData()
+    form.append('file', input.file)
+    form.append('version', input.version)
+    if (input.versionCode != null) form.append('versionCode', String(input.versionCode))
+    if (input.notes?.trim()) form.append('notes', input.notes.trim())
+    return apiPostFormData<MerchantAppRelease>('/admin/merchant-app-releases', form)
+  },
 }

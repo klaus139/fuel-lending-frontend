@@ -974,3 +974,16 @@ export type AdminWebhookInvestigateResult = {
   hasSuccessfulProcessing: boolean
   items: AdminWebhookLogDetail[]
 }
+
+export type MerchantAppRelease = {
+  id: string
+  version: string
+  versionCode?: number
+  apkUrl: string
+  fileName: string
+  fileSize: number
+  mimeType?: string
+  notes?: string
+  uploadedBy: string
+  createdAt: string
+}

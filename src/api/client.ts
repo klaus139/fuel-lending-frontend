@@ -198,6 +198,8 @@ export async function apiPostFormData<T>(path: string, formData: FormData): Prom
   try {
     const res = await client.post<ApiEnvelope<T>>(path, formData, {
       headers: { 'Content-Type': undefined },
+      // APK uploads can be large — allow up to 5 minutes
+      timeout: 5 * 60 * 1000,
     })
     if (!res.data.success) {
       throw new ApiError(res.data.message, res.status, res.data.data)

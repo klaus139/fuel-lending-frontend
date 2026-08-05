@@ -25,6 +25,7 @@ import { RatingsPage } from './pages/RatingsPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { WebhookInvestigationPage } from './pages/WebhookInvestigationPage'
+import { MerchantAppReleasePage } from './pages/MerchantAppReleasePage'
 import { TestQrCodePage } from './pages/TestQrCodePage'
 import { TestQrCustomerPage } from './pages/TestQrCustomerPage'
 import { TestQrMerchantPage } from './pages/TestQrMerchantPage'
@@ -72,6 +73,7 @@ export default function App() {
                   <Route path="support" element={<SupportTicketsPage />} />
                   <Route path="ratings" element={<RatingsPage />} />
                   <Route path="notifications" element={<NotificationsPage />} />
+                  <Route path="merchant-app" element={<MerchantAppReleasePage />} />
                   <Route path="settings" element={<SettingsPage />} />
                 </Route>
               </Route>
