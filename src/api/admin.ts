@@ -60,6 +60,9 @@ import type {
   CreateNotificationInput,
   NotificationsQuery,
   NotificationMedia,
+  AdminWebhookInvestigateResult,
+  AdminWebhookLogDetail,
+  AdminWebhookLogSummary,
 } from '../types/api'
 
 export const authApi = {
@@ -389,4 +392,22 @@ export const adminApi = {
     form.append('file', file)
     return apiPostFormData<NotificationMedia>('/admin/notifications/media', form)
   },
+
+  investigateWebhook: (reference: string) =>
+    apiGet<AdminWebhookInvestigateResult>('/admin/webhooks/investigate', { reference }),
+
+  listWebhooks: (query?: {
+    reference?: string
+    provider?: string
+    event?: string
+    processingStatus?: string
+    page?: number
+    limit?: number
+  }) =>
+    apiGet<PaginatedResult<AdminWebhookLogSummary>>(
+      '/admin/webhooks',
+      query as Record<string, unknown>,
+    ),
+
+  getWebhook: (id: string) => apiGet<AdminWebhookLogDetail>(`/admin/webhooks/${id}`),
 }

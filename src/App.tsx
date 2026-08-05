@@ -24,6 +24,7 @@ import { SupportTicketsPage } from './pages/SupportTicketsPage'
 import { RatingsPage } from './pages/RatingsPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { WebhookInvestigationPage } from './pages/WebhookInvestigationPage'
 import { TestQrCodePage } from './pages/TestQrCodePage'
 import { TestQrCustomerPage } from './pages/TestQrCustomerPage'
 import { TestQrMerchantPage } from './pages/TestQrMerchantPage'
@@ -67,6 +68,7 @@ export default function App() {
                   <Route path="loans/:loanId" element={<LoanDetailPage />} />
                   <Route path="settlements" element={<SettlementsPage />} />
                   <Route path="reconciliation" element={<ReconciliationPage />} />
+                  <Route path="payments" element={<WebhookInvestigationPage />} />
                   <Route path="support" element={<SupportTicketsPage />} />
                   <Route path="ratings" element={<RatingsPage />} />
                   <Route path="notifications" element={<NotificationsPage />} />

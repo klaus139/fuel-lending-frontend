@@ -15,11 +15,11 @@ const navItems = [
   { to: '/loans', label: 'Defaulters', icon: '⛽', end: false },
   { to: '/settlements', label: 'Settlements', icon: '💰' },
   { to: '/reconciliation', label: 'Reconciliation', icon: '🧾' },
+  { to: '/payments', label: 'Payments', icon: '🔎' },
   { to: '/support', label: 'Support', icon: '🎫' },
   { to: '/ratings', label: 'Ratings', icon: '⭐' },
   { to: '/notifications', label: 'Notifications', icon: '🔔' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
-  // { to: '/demo/qr', label: 'QR Demo', icon: '📷' },
 ]
 
 export function AdminLayout() {
@@ -39,7 +39,7 @@ export function AdminLayout() {
           <p className="text-xs font-medium uppercase tracking-widest text-emerald-500">Fuel Credit</p>
           <p className="mt-0.5 text-lg font-semibold text-(--text-primary)">Admin Panel</p>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {navItems.map((item) => (
             <NavLink
               key={item.to}

@@ -938,3 +938,39 @@ export type NotificationsQuery = {
   category?: NotificationCategory
   status?: NotificationStatus
 }
+
+export type AdminWebhookLogSummary = {
+  id: string
+  provider: string
+  event?: string
+  reference?: string
+  amount?: number
+  currency?: string
+  processingStatus: string
+  processingNote?: string
+  processingError?: string
+  route: string
+  ip?: string
+  createdAt: string
+  processedAt?: string
+  amountNairaHint?: number
+}
+
+export type AdminWebhookLogDetail = AdminWebhookLogSummary & {
+  headers: Record<string, unknown>
+  query: Record<string, unknown>
+  payload: Record<string, unknown>
+  rawBody: string
+  signatureHeader?: string
+  userAgent?: string
+  originalUrl: string
+  method: string
+}
+
+export type AdminWebhookInvestigateResult = {
+  reference: string
+  found: boolean
+  count: number
+  hasSuccessfulProcessing: boolean
+  items: AdminWebhookLogDetail[]
+}
