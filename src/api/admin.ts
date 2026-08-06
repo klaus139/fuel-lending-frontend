@@ -21,6 +21,8 @@ import type {
   AdminMerchantSummary,
   AdminCreateMerchantInput,
   MerchantDetail,
+  MerchantApplication,
+  MerchantApplicationStatus,
   AdminMerchantBranchSummary,
   AdminMerchantSellerSummary,
   AdminMerchantSalesSummary,
@@ -233,8 +235,15 @@ export const adminApi = {
 
   getMerchant: (merchantId: string) => apiGet<MerchantDetail>(`/admin/merchants/${merchantId}`),
 
-  createMerchant: (body: AdminCreateMerchantInput) =>
-    apiPost<MerchantDetail>('/admin/merchants', body),
+  createMerchant: async (body: AdminCreateMerchantInput, cacDocument?: File | null) => {
+    const form = new FormData()
+    for (const [key, value] of Object.entries(body)) {
+      if (value == null || value === '') continue
+      form.append(key, String(value))
+    }
+    if (cacDocument) form.append('cacDocument', cacDocument)
+    return apiPostFormData<MerchantDetail>('/admin/merchants', form)
+  },
 
   updateMerchant: (merchantId: string, body: Partial<AdminCreateMerchantInput>) =>
     apiPatch<MerchantDetail>(`/admin/merchants/${merchantId}`, body),
@@ -247,6 +256,42 @@ export const adminApi = {
 
   rejectMerchant: (merchantId: string, reason: string) =>
     apiPatch<MerchantDetail>(`/admin/merchants/${merchantId}/reject`, { reason }),
+
+  merchantApplications: (query?: { page?: number; limit?: number; status?: MerchantApplicationStatus }) =>
+    apiGet<PaginatedResult<MerchantApplication>>(
+      '/admin/merchant-applications',
+      query as Record<string, unknown>,
+    ),
+
+  getMerchantApplication: (applicationId: string) =>
+    apiGet<MerchantApplication>(`/admin/merchant-applications/${applicationId}`),
+
+  markMerchantApplicationContacted: (applicationId: string, adminNotes?: string) =>
+    apiPatch<MerchantApplication>(`/admin/merchant-applications/${applicationId}/contacted`, {
+      ...(adminNotes ? { adminNotes } : {}),
+    }),
+
+  rejectMerchantApplication: (applicationId: string, reason: string) =>
+    apiPatch<MerchantApplication>(`/admin/merchant-applications/${applicationId}/reject`, {
+      reason,
+    }),
+
+  onboardMerchantApplication: async (
+    applicationId: string,
+    body: AdminCreateMerchantInput,
+    cacDocument?: File | null,
+  ) => {
+    const form = new FormData()
+    for (const [key, value] of Object.entries(body)) {
+      if (value == null || value === '') continue
+      form.append(key, String(value))
+    }
+    if (cacDocument) form.append('cacDocument', cacDocument)
+    return apiPostFormData<{ application: MerchantApplication; merchant: MerchantDetail }>(
+      `/admin/merchant-applications/${applicationId}/onboard`,
+      form,
+    )
+  },
 
   merchantBranches: (merchantId: string) =>
     apiGet<AdminMerchantBranchSummary[]>(`/admin/merchants/${merchantId}/branches`),

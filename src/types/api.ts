@@ -90,6 +90,26 @@ export type TransactionStatus =
   | 'cancelled'
 
 export type MerchantStatus = 'pending' | 'approved' | 'rejected' | 'suspended'
+
+export type MerchantApplicationStatus = 'new' | 'contacted' | 'onboarded' | 'rejected'
+
+export type MerchantApplication = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  petrolStationName: string
+  address: string
+  cacNumber?: string
+  status: MerchantApplicationStatus
+  rejectReason?: string
+  adminNotes?: string
+  reviewedAt?: string
+  merchantProfileId?: string
+  createdAt: string
+  updatedAt: string
+}
+
 export type SettlementStatus = 'pending' | 'paid' | 'confirmed'
 export type SettlementApprovalStatus = 'none' | 'pending_approval' | 'approved' | 'rejected'
 export type MerchantSalesSnapshotStatus = 'open' | 'reconciled' | 'settled'

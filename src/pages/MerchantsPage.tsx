@@ -115,7 +115,7 @@ function MerchantFormFields({
         <Input value={form.landmark ?? ''} onChange={(e) => setForm({ landmark: e.target.value })} />
       </FormField>
       {showNin && (
-        <FormField label="NIN">
+        <FormField label="NIN (must match contact name)">
           <Input value={form.nin ?? ''} onChange={(e) => setForm({ nin: e.target.value })} placeholder="11 digits" />
         </FormField>
       )}
@@ -165,6 +165,7 @@ export function MerchantsPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editForm, setEditForm] = useState<Partial<AdminCreateMerchantInput>>({})
   const [createForm, setCreateForm] = useState<AdminCreateMerchantInput>(emptyCreateForm)
+  const [createCacDocument, setCreateCacDocument] = useState<File | null>(null)
   const [rejectTarget, setRejectTarget] = useState<AdminMerchantSummary | null>(null)
   const [rejectReason, setRejectReason] = useState('')
 
@@ -189,9 +190,9 @@ export function MerchantsPage() {
     queryFn: adminApi.dashboard,
   })
 
-  const { data: pendingMerchants } = useQuery({
-    queryKey: ['admin', 'merchants', 'pending-count'],
-    queryFn: () => adminApi.merchants({ page: 1, limit: 1, status: 'pending' }),
+  const { data: interestLeads } = useQuery({
+    queryKey: ['admin', 'merchant-applications', 'new-count'],
+    queryFn: () => adminApi.merchantApplications({ page: 1, limit: 1, status: 'new' }),
   })
 
   const { data: fuelStats, isFetching: fuelStatsFetching } = useQuery({
@@ -277,12 +278,13 @@ export function MerchantsPage() {
             ? createForm.longitude
             : undefined,
       }
-      return adminApi.createMerchant(body)
+      return adminApi.createMerchant(body, createCacDocument)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'merchants'] })
       setShowCreate(false)
       setCreateForm(emptyCreateForm)
+      setCreateCacDocument(null)
     },
   })
 
@@ -448,9 +450,15 @@ export function MerchantsPage() {
     <div>
       <PageHeader
         title="Merchants"
-        description="Fuel stations — review applications, manage onboarding, sales, and staff"
+        description="Live fuel stations — onboarded merchants, sales, and staff. New interest leads are under Interest."
         actions={
           <>
+            <Link
+              to="/merchant-applications"
+              className="inline-flex items-center justify-center rounded-lg border border-(--border) bg-(--bg-secondary) px-3 py-2 text-sm font-medium text-(--text-primary) hover:bg-(--bg-hover)"
+            >
+              View interest leads
+            </Link>
             <Button variant="secondary" onClick={handleExport}>
               Export CSV
             </Button>
@@ -472,24 +480,14 @@ export function MerchantsPage() {
           sub={`${dashboard?.merchantProfiles.new30d ?? 0} in last 30 days`}
           accent="blue"
         />
-        <button
-          type="button"
-          className="text-left"
-          onClick={() => {
-            setStatus('pending')
-            setPage(1)
-          }}
-          title="Show pending applications"
-        >
+        <Link to="/merchant-applications" className="text-left" title="Open interest leads">
           <KpiCard
-            label="Pending approval"
-            value={String(
-              dashboard?.merchantProfiles.pending ?? pendingMerchants?.pagination.total ?? '—',
-            )}
-            sub="Click to filter · open row → Review details"
+            label="New interest"
+            value={String(interestLeads?.pagination.total ?? '—')}
+            sub="Indicate-interest leads awaiting outreach"
             accent="amber"
           />
-        </button>
+        </Link>
         <KpiCard
           label="Showing"
           value={String(data?.pagination.total ?? '—')}
@@ -500,11 +498,13 @@ export function MerchantsPage() {
 
       {status === 'pending' && (
         <Card className="mb-4 border-amber-500/30 bg-amber-500/5 p-4 text-sm text-(--text-secondary)">
-          <p className="font-medium text-amber-600">Station applications</p>
+          <p className="font-medium text-amber-600">Legacy pending profiles</p>
           <p className="mt-1">
-            Open <strong>Review details</strong> to see the full application (contact, address, NIN
-            location fields). Use <strong>Approve</strong> to email login credentials, or{' '}
-            <strong>Decline</strong> with a reason.
+            New station interest is collected on the{' '}
+            <Link to="/merchant-applications" className="font-medium text-(--accent) hover:underline">
+              Interest
+            </Link>{' '}
+            page. This filter only shows older pending merchant profiles (if any).
           </p>
         </Card>
       )}
@@ -670,15 +670,34 @@ export function MerchantsPage() {
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create Merchant" wide>
         <p className="mb-4 text-sm text-(--text-muted)">
-          A temporary login password will be generated and emailed to the merchant.
+          NIN is verified against the contact name — create fails if they do not match. A temporary
+          login password will be emailed to the merchant. CAC number and document are optional.
         </p>
         <MerchantFormFields
           form={createForm}
           setForm={(patch) => setCreateForm((prev) => ({ ...prev, ...patch }))}
           showNin
         />
+        <FormField label="CAC document (optional)">
+          <Input
+            type="file"
+            accept=".pdf,image/*"
+            onChange={(e) => setCreateCacDocument(e.target.files?.[0] ?? null)}
+          />
+          {createCacDocument && (
+            <p className="mt-1 text-xs text-(--text-muted)">{createCacDocument.name}</p>
+          )}
+        </FormField>
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowCreate(false)
+              setCreateCacDocument(null)
+            }}
+          >
+            Cancel
+          </Button>
           <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
             {createMutation.isPending ? 'Creating...' : 'Create'}
           </Button>

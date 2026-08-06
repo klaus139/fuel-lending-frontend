@@ -12,6 +12,7 @@ const navItems = [
   { to: '/users', label: 'Users', icon: '👥' },
   { to: '/kyc', label: 'KYC', icon: '🪪' },
   { to: '/merchants', label: 'Merchants', icon: '🏪' },
+  { to: '/merchant-applications', label: 'Interest', icon: '📋' },
   { to: '/loans', label: 'Defaulters', icon: '⛽', end: false },
   { to: '/settlements', label: 'Settlements', icon: '💰' },
   { to: '/reconciliation', label: 'Reconciliation', icon: '🧾' },

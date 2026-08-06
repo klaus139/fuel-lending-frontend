@@ -15,6 +15,7 @@ import { UserDetailPage } from './pages/UserDetailPage'
 import { KycQueuePage } from './pages/KycQueuePage'
 import { MerchantsPage } from './pages/MerchantsPage'
 import { MerchantDetailPage } from './pages/MerchantDetailPage'
+import { MerchantApplicationsPage } from './pages/MerchantApplicationsPage'
 import { LoansPage } from './pages/LoansPage'
 import { LoanDashboardPage } from './pages/LoanDashboardPage'
 import { LoanDetailPage } from './pages/LoanDetailPage'
@@ -63,6 +64,7 @@ export default function App() {
                   <Route path="users/:userId" element={<UserDetailPage />} />
                   <Route path="kyc" element={<KycQueuePage />} />
                   <Route path="merchants" element={<MerchantsPage />} />
+                  <Route path="merchant-applications" element={<MerchantApplicationsPage />} />
                   <Route path="merchants/:merchantId" element={<MerchantDetailPage />} />
                   <Route path="loans" element={<LoanDashboardPage />} />
                   <Route path="loans/manage" element={<LoansPage />} />

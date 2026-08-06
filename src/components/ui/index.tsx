@@ -205,22 +205,29 @@ export function Modal({
   title,
   children,
   wide,
+  size,
 }: {
   open: boolean
   onClose: () => void
   title: string
   children: ReactNode
+  /** @deprecated prefer size="lg" */
   wide?: boolean
+  size?: 'md' | 'lg' | 'xl'
 }) {
   if (!open) return null
+
+  const resolvedSize = size ?? (wide ? 'lg' : 'md')
+  const widthClass =
+    resolvedSize === 'xl' ? 'max-w-5xl' : resolvedSize === 'lg' ? 'max-w-3xl' : 'max-w-md'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} role="presentation" />
       <div
         className={cn(
-          'relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-xl border border-(--border) bg-(--bg-card) p-6 shadow-2xl',
-          wide ? 'max-w-2xl' : 'max-w-md',
+          'relative z-10 max-h-[92vh] w-full overflow-y-auto rounded-xl border border-(--border) bg-(--bg-card) p-6 shadow-2xl',
+          widthClass,
         )}
       >
         <div className="mb-4 flex items-center justify-between">
