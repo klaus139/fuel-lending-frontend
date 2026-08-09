@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { authApi } from '../api/admin'
 import { ApiError } from '../api/client'
+import { BrandLogo } from '../components/BrandLogo'
 import { Button, ErrorMessage, Input, FormField } from '../components/ui'
 
 export function ForgotPasswordPage() {
@@ -34,8 +35,8 @@ export function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-(--bg-primary) p-4">
       <div className="w-full max-w-md rounded-2xl border border-(--border) bg-(--bg-card) p-8 shadow-xl">
         <div className="mb-8 text-center">
-          <p className="text-xs font-medium uppercase tracking-widest text-emerald-500">BurrowFuel</p>
-          <h1 className="mt-2 text-2xl font-semibold text-(--text-primary)">Forgot password</h1>
+          <BrandLogo size="lg" className="mx-auto rounded-xl" />
+          <h1 className="mt-4 text-2xl font-semibold text-(--text-primary)">Forgot password</h1>
           <p className="mt-1 text-sm text-(--text-muted)">
             Enter your admin email and we&apos;ll send a reset link
           </p>

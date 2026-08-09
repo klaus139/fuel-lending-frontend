@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { cn } from '../../lib/utils'
+import { BrandLogo } from '../BrandLogo'
 import { Button } from '../ui'
 
 const navItems = [
@@ -37,9 +38,9 @@ export function AdminLayout() {
   return (
     <div className="flex h-full min-h-screen bg-(--bg-primary)">
       <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r border-(--border) bg-(--bg-secondary)">
-        <div className="border-b border-(--border) px-5 py-5">
-          <p className="text-xs font-medium uppercase tracking-widest text-emerald-500">BurrowFuel</p>
-          <p className="mt-0.5 text-lg font-semibold text-(--text-primary)">Admin Panel</p>
+        <div className="border-b border-(--border) px-4 py-4">
+          <BrandLogo size="sm" className="w-full rounded-lg" />
+          <p className="mt-2 text-sm font-semibold text-(--text-primary)">Admin Panel</p>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {navItems.map((item) => (

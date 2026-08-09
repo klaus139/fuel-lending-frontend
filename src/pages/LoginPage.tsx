@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { BrandLogo } from '../components/BrandLogo'
 import { Button, ErrorMessage, Input, FormField } from '../components/ui'
 import { ApiError } from '../api/client'
 
@@ -28,8 +29,8 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-(--bg-primary) p-4">
       <div className="w-full max-w-md rounded-2xl border border-(--border) bg-(--bg-card) p-8 shadow-xl">
         <div className="mb-8 text-center">
-          <p className="text-xs font-medium uppercase tracking-widest text-emerald-500">BurrowFuel</p>
-          <h1 className="mt-2 text-2xl font-semibold text-(--text-primary)">Admin Login</h1>
+          <BrandLogo size="lg" className="mx-auto rounded-xl" />
+          <h1 className="mt-4 text-2xl font-semibold text-(--text-primary)">Admin Login</h1>
           <p className="mt-1 text-sm text-(--text-muted)">Sign in with your admin credentials</p>
         </div>
 
