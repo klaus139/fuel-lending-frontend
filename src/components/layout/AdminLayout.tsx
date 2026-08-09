@@ -38,7 +38,7 @@ export function AdminLayout() {
     <div className="flex h-full min-h-screen bg-(--bg-primary)">
       <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r border-(--border) bg-(--bg-secondary)">
         <div className="border-b border-(--border) px-5 py-5">
-          <p className="text-xs font-medium uppercase tracking-widest text-emerald-500">Fuel Credit</p>
+          <p className="text-xs font-medium uppercase tracking-widest text-emerald-500">BurrowFuel</p>
           <p className="mt-0.5 text-lg font-semibold text-(--text-primary)">Admin Panel</p>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
