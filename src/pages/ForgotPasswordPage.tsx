@@ -35,8 +35,10 @@ export function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-(--bg-primary) p-4">
       <div className="w-full max-w-md rounded-2xl border border-(--border) bg-(--bg-card) p-8 shadow-xl">
         <div className="mb-8 text-center">
-          <BrandLogo size="lg" className="mx-auto rounded-xl" />
-          <h1 className="mt-4 text-2xl font-semibold text-(--text-primary)">Forgot password</h1>
+          <div className="mx-auto mb-4 flex items-center justify-center rounded-2xl bg-[#0b1f3a] px-6 py-5">
+            <BrandLogo variant="full" size="lg" className="mx-auto" />
+          </div>
+          <h1 className="text-2xl font-semibold text-(--text-primary)">Forgot password</h1>
           <p className="mt-1 text-sm text-(--text-muted)">
             Enter your admin email and we&apos;ll send a reset link
           </p>
