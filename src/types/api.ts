@@ -1007,3 +1007,16 @@ export type MerchantAppRelease = {
   uploadedBy: string
   createdAt: string
 }
+
+export type UserAppRelease = {
+  id: string
+  version: string
+  versionCode?: number
+  apkUrl: string
+  fileName: string
+  fileSize: number
+  mimeType?: string
+  notes?: string
+  uploadedBy: string
+  createdAt: string
+}

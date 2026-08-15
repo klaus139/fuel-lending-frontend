@@ -66,6 +66,7 @@ import type {
   AdminWebhookLogDetail,
   AdminWebhookLogSummary,
   MerchantAppRelease,
+  UserAppRelease,
 } from '../types/api'
 
 export const authApi = {
@@ -484,5 +485,28 @@ export const adminApi = {
     if (input.versionCode != null) form.append('versionCode', String(input.versionCode))
     if (input.notes?.trim()) form.append('notes', input.notes.trim())
     return apiPostFormData<MerchantAppRelease>('/admin/merchant-app-releases', form)
+  },
+
+  getLatestUserAppRelease: () =>
+    apiGet<UserAppRelease | null>('/admin/user-app-releases/latest'),
+
+  listUserAppReleases: (page = 1, limit = 20) =>
+    apiGet<PaginatedResult<UserAppRelease>>('/admin/user-app-releases', {
+      page,
+      limit,
+    }),
+
+  uploadUserAppRelease: async (input: {
+    file: File
+    version: string
+    versionCode?: number
+    notes?: string
+  }): Promise<UserAppRelease> => {
+    const form = new FormData()
+    form.append('file', input.file)
+    form.append('version', input.version)
+    if (input.versionCode != null) form.append('versionCode', String(input.versionCode))
+    if (input.notes?.trim()) form.append('notes', input.notes.trim())
+    return apiPostFormData<UserAppRelease>('/admin/user-app-releases', form)
   },
 }

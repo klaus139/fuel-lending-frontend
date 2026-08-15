@@ -22,6 +22,7 @@ const navItems = [
   { to: '/ratings', label: 'Ratings', icon: '⭐' },
   { to: '/notifications', label: 'Notifications', icon: '🔔' },
   { to: '/merchant-app', label: 'Merchant app', icon: '📦' },
+  { to: '/user-app', label: 'User app', icon: '📱' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
 
