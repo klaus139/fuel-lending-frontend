@@ -219,6 +219,7 @@ export function UsersPage() {
               <option value="merchant_admin">Merchant Admin</option>
               <option value="merchant_seller">Merchant Seller</option>
               <option value="admin">Admin</option>
+              <option value="subsidy_admin">Subsidy admin</option>
             </Select>
             <Select value={accountStatus} onChange={(e) => { setAccountStatus(e.target.value); setPage(1) }}>
               <option value="">All statuses</option>

@@ -67,6 +67,9 @@ import type {
   AdminWebhookLogSummary,
   MerchantAppRelease,
   UserAppRelease,
+  SubsidyUserRow,
+  SubsidySaleRow,
+  SubsidySettlementRow,
 } from '../types/api'
 
 export const authApi = {
@@ -509,4 +512,49 @@ export const adminApi = {
     if (input.notes?.trim()) form.append('notes', input.notes.trim())
     return apiPostFormData<UserAppRelease>('/admin/user-app-releases', form)
   },
+
+  listSubsidyUsers: (query: {
+    page?: number
+    limit?: number
+    search?: string
+    accountStatus?: 'active' | 'blocked'
+  }) =>
+    apiGet<PaginatedResult<SubsidyUserRow>>('/admin/subsidy/users', query as Record<string, unknown>),
+
+  listSubsidySales: (query: {
+    page?: number
+    limit?: number
+    fromDate?: string
+    toDate?: string
+    merchantCode?: string
+    settlementStatus?: 'settled' | 'unsettled'
+  }) =>
+    apiGet<PaginatedResult<SubsidySaleRow>>('/admin/subsidy/sales', query as Record<string, unknown>),
+
+  listSubsidySettlements: (query: { page?: number; limit?: number }) =>
+    apiGet<PaginatedResult<SubsidySettlementRow>>(
+      '/admin/subsidy/settlements',
+      query as Record<string, unknown>,
+    ),
+
+  settleSubsidy: (body: {
+    merchantCode: string
+    settlementDate: string
+    paymentReference?: string
+    note?: string
+  }) => apiPost<SubsidySettlementRow>('/admin/subsidy/settlements', body),
+
+  createSubsidyOperator: (body: {
+    firstName: string
+    lastName: string
+    email: string
+    phone: string
+    password: string
+  }) => apiPost<SubsidyUserRow>('/admin/subsidy/operators', body),
+
+  getSubsidyFuelCaps: () =>
+    apiGet<AdminVehicleFuelCapsConfig>('/admin/subsidy/config/fuel-caps'),
+
+  setSubsidyFuelCaps: (caps: Partial<Record<VehicleType, number>>) =>
+    apiPut<AdminVehicleFuelCapsConfig>('/admin/subsidy/config/fuel-caps', { caps }),
 }

@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const me = await authApi.me()
-      if (me.role !== 'admin') {
+      if (me.role !== 'admin' && me.role !== 'subsidy_admin') {
         authApi.clearTokens()
         setUser(null)
       } else {
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const data = await authApi.login(email, password)
-    if (data.user.role !== 'admin') {
+    if (data.user.role !== 'admin' && data.user.role !== 'subsidy_admin') {
       authApi.clearTokens()
       throw new Error('Access denied. Admin credentials required.')
     }

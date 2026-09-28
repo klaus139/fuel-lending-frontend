@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { cn } from '../../lib/utils'
@@ -26,10 +27,26 @@ const navItems = [
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
 
+const subsidyNavItems = [
+  { to: '/subsidy/users', label: 'Subsidy users', icon: '🟢', end: true },
+  { to: '/subsidy/sales', label: 'Subsidy sales', icon: '⛽', end: true },
+  { to: '/subsidy/settlements', label: 'Subsidy settle', icon: '💰', end: true },
+  { to: '/subsidy/limits', label: 'Subsidy limits', icon: '📏', end: true },
+]
+
 export function AdminLayout() {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
+  const subsidyOnly = user?.role === 'subsidy_admin'
+  const items = subsidyOnly ? subsidyNavItems : [...navItems, ...subsidyNavItems]
+
+  useEffect(() => {
+    if (subsidyOnly && !location.pathname.startsWith('/subsidy')) {
+      navigate('/subsidy/users', { replace: true })
+    }
+  }, [subsidyOnly, location.pathname, navigate])
 
   const handleLogout = async () => {
     await logout()
@@ -41,10 +58,12 @@ export function AdminLayout() {
       <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r border-(--border) bg-(--bg-secondary)">
         <div className="border-b border-(--border) bg-[#0b1f3a] px-4 py-4">
           <BrandLogo variant="full" size="md" className="mx-auto w-full max-w-[180px]" />
-          <p className="mt-2 text-center text-xs font-medium text-white/70">Admin Panel</p>
+          <p className="mt-2 text-center text-xs font-medium text-white/70">
+            {subsidyOnly ? 'Subsidy programme' : 'Admin Panel'}
+          </p>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -73,7 +92,9 @@ export function AdminLayout() {
 
       <div className="flex flex-1 flex-col pl-60">
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-(--border) bg-(--bg-secondary)/80 px-6 backdrop-blur">
-          <p className="text-sm text-(--text-muted)">Platform administration</p>
+          <p className="text-sm text-(--text-muted)">
+            {subsidyOnly ? 'Subsidy programme' : 'Platform administration'}
+          </p>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={toggleTheme}>
               {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}

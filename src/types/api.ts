@@ -22,6 +22,48 @@ export type UserRole =
   | 'merchant_admin'
   | 'merchant_seller'
   | 'admin'
+  | 'subsidy_admin'
+
+export type SubsidyUserRow = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  purchaseId?: string
+  accountStatus: string
+  isKycVerified: boolean
+  createdAt: string
+}
+
+export type SubsidySaleRow = {
+  id: string
+  fuelLitres: number
+  pricePerLitre: number
+  amount: number
+  salesDate: string
+  completedAt: string
+  settled: boolean
+  customerName: string
+  customerEmail: string
+  customerPhone: string
+  merchantCode: string
+  businessName: string
+}
+
+export type SubsidySettlementRow = {
+  id: string
+  merchantCode: string
+  businessName: string
+  settlementDate: string
+  grossAmount: number
+  totalLitres: number
+  saleCount: number
+  status: 'paid'
+  paymentReference?: string
+  note?: string
+  paidAt: string
+}
 
 export type AuthUser = {
   id: string

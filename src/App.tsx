@@ -9,6 +9,11 @@ import { LoginPage } from './pages/LoginPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { SubsidyUsersPage } from './pages/SubsidyUsersPage'
+import { SubsidySalesPage } from './pages/SubsidySalesPage'
+import { SubsidySettlementsPage } from './pages/SubsidySettlementsPage'
+import { SubsidyLimitsPage } from './pages/SubsidyLimitsPage'
+import { useAuth } from './context/AuthContext'
 import { RevenuePage } from './pages/RevenuePage'
 import { SettlePurchasePage } from './pages/SettlePurchasePage'
 import { TransactionsPage } from './pages/TransactionsPage'
@@ -33,6 +38,14 @@ import { UserAppReleasePage } from './pages/UserAppReleasePage'
 import { TestQrCodePage } from './pages/TestQrCodePage'
 import { TestQrCustomerPage } from './pages/TestQrCustomerPage'
 import { TestQrMerchantPage } from './pages/TestQrMerchantPage'
+
+function HomePage() {
+  const { user } = useAuth()
+  if (user?.role === 'subsidy_admin') {
+    return <Navigate to="/subsidy/users" replace />
+  }
+  return <DashboardPage />
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,7 +74,11 @@ export default function App() {
               <Route path="/demo/qr/customer" element={<TestQrCustomerPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route element={<AdminLayout />}>
-                  <Route index element={<DashboardPage />} />
+                  <Route index element={<HomePage />} />
+                  <Route path="subsidy/users" element={<SubsidyUsersPage />} />
+                  <Route path="subsidy/sales" element={<SubsidySalesPage />} />
+                  <Route path="subsidy/settlements" element={<SubsidySettlementsPage />} />
+                  <Route path="subsidy/limits" element={<SubsidyLimitsPage />} />
                   <Route path="revenue" element={<RevenuePage />} />
                   <Route path="settle" element={<SettlePurchasePage />} />
                   <Route path="transactions" element={<TransactionsPage />} />

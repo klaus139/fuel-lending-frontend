@@ -32,7 +32,7 @@ export function GuestRoute() {
   }
 
   if (user) {
-    return <Navigate to="/" replace />
+    return <Navigate to={user.role === 'subsidy_admin' ? '/subsidy/users' : '/'} replace />
   }
 
   return <Outlet />

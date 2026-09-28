@@ -170,8 +170,8 @@ export function SettingsPage() {
               Vehicle fuel limits (litres)
             </h2>
             <p className="mt-1 text-sm text-(--text-muted)">
-              Each vehicle type gets a max litres per purchase. Customers must repay before the next
-              purchase.
+              Lending customers only. Each vehicle type gets a max litres per purchase, and they
+              must repay before the next purchase. Subsidy beneficiaries use Subsidy limits.
             </p>
           </div>
           {capsData && <SourceBadge source={capsData.source} />}
@@ -412,7 +412,8 @@ export function SettingsPage() {
 
             <FormField label="Overdue daily interest (%)">
               <p className="mb-2 text-xs text-(--text-muted)">
-                Daily percent of outstanding balance applied only after the due date
+                Flat daily percent of the original fuel purchase, applied only after the due date.
+                Does not compound on overdue interest already added.
               </p>
               <div className="flex items-center gap-3">
                 <Input
@@ -425,6 +426,12 @@ export function SettingsPage() {
                 />
                 {data && <SourceBadge source={data.sources.overdueDailyInterestPercent} />}
               </div>
+              {Number.isFinite(parsedOverdue) && (
+                <p className="mt-1 text-xs text-(--text-muted)">
+                  Example: ₦5,000 fuel adds {formatCurrency(5_000 * (parsedOverdue / 100))} per
+                  overdue day
+                </p>
+              )}
             </FormField>
 
             <div className="flex justify-end pt-2">

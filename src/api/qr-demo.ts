@@ -2,7 +2,7 @@ import axios, { isAxiosError } from 'axios'
 import type { ApiEnvelope, AuthTokensResponse, AuthUser } from '../types/api'
 
 export const API_BASE =
-  import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api/v1'
+  import.meta.env.VITE_API_URL ?? 'http://localhost:4001/api/v1'
 
 export type QrDisbursementResult = {
   transactionId: string
